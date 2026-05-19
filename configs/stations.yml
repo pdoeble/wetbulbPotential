@@ -1,0 +1,410 @@
+defaults:
+  year_start: 2002
+  year_end: 2013
+
+locations:
+  - id: stuttgart-neckartal
+    name: Stuttgart Neckartal
+    country: Germany
+    climate_label: Central European urban valley
+    latitude: 48.7896
+    longitude: 9.2167
+    elevation_m: 224
+    timezone: Europe/Berlin
+    dwd:
+      station_id: "04926"
+      product_code: TF
+      historical_file: stundenwerte_TF_04926_20021101_20130514_hist.zip
+      local_file: produkt_tf_stunde_20021101_20130514_04926.txt
+    nasa:
+      enabled: true
+
+  - id: phoenix-sky-harbor
+    name: Phoenix Sky Harbor
+    country: United States
+    climate_label: Hot dry urban desert
+    latitude: 33.4278
+    longitude: -112.00365
+    elevation_m: 339.2
+    timezone: America/Phoenix
+    noaa:
+      station_id: "72278023183"
+    nasa:
+      enabled: true
+
+  - id: las-vegas-harry-reid
+    name: Las Vegas Harry Reid
+    country: United States
+    climate_label: Hot dry desert
+    latitude: 36.0801
+    longitude: -115.1522
+    elevation_m: 664
+    timezone: America/Los_Angeles
+    noaa:
+      station_id: "72386023169"
+    nasa:
+      enabled: true
+
+  - id: palm-springs-intl
+    name: Palm Springs Intl
+    country: United States
+    climate_label: Very hot dry low desert
+    latitude: 33.8297
+    longitude: -116.5067
+    elevation_m: 145
+    timezone: America/Los_Angeles
+    noaa:
+      station_id: "72286893138"
+    nasa:
+      enabled: true
+
+  - id: el-centro-imperial
+    name: El Centro Imperial Valley
+    country: United States
+    climate_label: Extreme hot dry low desert
+    latitude: 32.8342
+    longitude: -115.5787
+    elevation_m: -17
+    timezone: America/Los_Angeles
+    noaa:
+      station_id: "72281023199"
+    nasa:
+      enabled: true
+
+  - id: salt-lake-city-intl
+    name: Salt Lake City Intl
+    country: United States
+    climate_label: Hot summer high elevation
+    latitude: 40.7884
+    longitude: -111.9778
+    elevation_m: 1288
+    timezone: America/Denver
+    noaa:
+      station_id: "72572024127"
+    nasa:
+      enabled: true
+
+  - id: denver-intl
+    name: Denver Intl
+    country: United States
+    climate_label: High elevation summer heat
+    latitude: 39.8466
+    longitude: -104.6562
+    elevation_m: 1655
+    timezone: America/Denver
+    noaa:
+      station_id: "72565003017"
+    nasa:
+      enabled: true
+
+  - id: miami-intl
+    name: Miami Intl
+    country: United States
+    climate_label: Hot humid coastal
+    latitude: 25.7959
+    longitude: -80.2870
+    elevation_m: 3
+    timezone: America/New_York
+    noaa:
+      station_id: "72202012839"
+    nasa:
+      enabled: true
+
+  - id: houston-george-bush
+    name: Houston George Bush Intercontinental
+    country: United States
+    climate_label: Hot humid Gulf Coast
+    latitude: 29.9844
+    longitude: -95.3414
+    elevation_m: 30
+    timezone: America/Chicago
+    noaa:
+      station_id: "72243012960"
+    nasa:
+      enabled: true
+
+  - id: dubai-intl
+    name: Dubai Intl
+    country: United Arab Emirates
+    climate_label: Hot humid Gulf coast
+    latitude: 25.2528
+    longitude: 55.3644
+    elevation_m: 5
+    timezone: Asia/Dubai
+    noaa:
+      station_id: "41194099999"
+    nasa:
+      enabled: true
+
+  - id: abu-dhabi-intl
+    name: Abu Dhabi Intl
+    country: United Arab Emirates
+    climate_label: Hot humid Gulf coast
+    latitude: 24.4330
+    longitude: 54.6511
+    elevation_m: 27
+    timezone: Asia/Dubai
+    noaa:
+      station_id: "41217099999"
+    nasa:
+      enabled: true
+
+  - id: al-ain
+    name: Al Ain
+    country: United Arab Emirates
+    climate_label: Hot dry inland desert
+    latitude: 24.2617
+    longitude: 55.6092
+    elevation_m: 264
+    timezone: Asia/Dubai
+    noaa:
+      station_id: "41218099999"
+    nasa:
+      enabled: true
+
+  - id: doha-airport
+    name: Doha Airport Area
+    country: Qatar
+    climate_label: Hot humid Gulf coast
+    latitude: 25.2606
+    longitude: 51.5650
+    elevation_m: 10
+    timezone: Asia/Qatar
+    noaa:
+      station_id: "41170099999"
+    nasa:
+      enabled: true
+
+  - id: riyadh-king-khalid
+    name: Riyadh King Khalid Area
+    country: Saudi Arabia
+    climate_label: Hot dry continental desert
+    latitude: 24.9576
+    longitude: 46.6988
+    elevation_m: 625
+    timezone: Asia/Riyadh
+    noaa:
+      station_id: "40437099999"
+    nasa:
+      enabled: true
+
+  - id: kuwait-intl
+    name: Kuwait Intl
+    country: Kuwait
+    climate_label: Extreme hot Gulf desert
+    latitude: 29.2266
+    longitude: 47.9689
+    elevation_m: 55
+    timezone: Asia/Kuwait
+    noaa:
+      station_id: "40582099999"
+    nasa:
+      enabled: true
+
+  - id: muscat-seeb
+    name: Muscat Seeb
+    country: Oman
+    climate_label: Hot humid desert coast
+    latitude: 23.5933
+    longitude: 58.2844
+    elevation_m: 15
+    timezone: Asia/Muscat
+    noaa:
+      station_id: "41256099999"
+    nasa:
+      enabled: true
+
+  - id: cairo-intl
+    name: Cairo Intl
+    country: Egypt
+    climate_label: Hot dry urban
+    latitude: 30.1219
+    longitude: 31.4056
+    elevation_m: 116
+    timezone: Africa/Cairo
+    noaa:
+      station_id: "62366099999"
+    nasa:
+      enabled: true
+
+  - id: marrakech-menara
+    name: Marrakech Menara
+    country: Morocco
+    climate_label: Hot dry North Africa
+    latitude: 31.6069
+    longitude: -8.0363
+    elevation_m: 466
+    timezone: Africa/Casablanca
+    noaa:
+      station_id: "60230099999"
+    nasa:
+      enabled: true
+
+  - id: lecce-nardo-proxy
+    name: Lecce Nardo Proxy
+    country: Italy
+    climate_label: Mediterranean test-track proxy
+    latitude: 40.2392
+    longitude: 18.1333
+    elevation_m: 48
+    timezone: Europe/Rome
+    noaa:
+      station_id: "16332099999"
+    nasa:
+      enabled: true
+
+  - id: madrid-barajas
+    name: Madrid Barajas
+    country: Spain
+    climate_label: Hot dry European summer
+    latitude: 40.4722
+    longitude: -3.5608
+    elevation_m: 610
+    timezone: Europe/Madrid
+    noaa:
+      station_id: "08221099999"
+    nasa:
+      enabled: true
+
+  - id: sevilla-airport
+    name: Sevilla Airport
+    country: Spain
+    climate_label: Very hot European summer
+    latitude: 37.4179
+    longitude: -5.8989
+    elevation_m: 34
+    timezone: Europe/Madrid
+    noaa:
+      station_id: "08391099999"
+    nasa:
+      enabled: true
+
+  - id: athens-airport
+    name: Athens Airport Area
+    country: Greece
+    climate_label: Hot Mediterranean urban
+    latitude: 37.9364
+    longitude: 23.9475
+    elevation_m: 94
+    timezone: Europe/Athens
+    noaa:
+      station_id: "16716199999"
+    nasa:
+      enabled: true
+
+  - id: cape-town-intl
+    name: Cape Town Intl
+    country: South Africa
+    climate_label: Southern hemisphere coastal summer
+    latitude: -33.9715
+    longitude: 18.6021
+    elevation_m: 46
+    timezone: Africa/Johannesburg
+    noaa:
+      station_id: "68816099999"
+    nasa:
+      enabled: true
+
+  - id: mexico-city-airport
+    name: Mexico City Airport Area
+    country: Mexico
+    climate_label: High elevation urban
+    latitude: 19.4363
+    longitude: -99.0721
+    elevation_m: 2230
+    timezone: America/Mexico_City
+    noaa:
+      station_id: "76679399999"
+    nasa:
+      enabled: true
+
+  - id: tokyo-haneda
+    name: Tokyo Haneda
+    country: Japan
+    climate_label: Hot humid megacity
+    latitude: 35.5494
+    longitude: 139.7798
+    elevation_m: 6
+    timezone: Asia/Tokyo
+    noaa:
+      station_id: "47671099999"
+    nasa:
+      enabled: true
+
+  - id: singapore-changi
+    name: Singapore Changi
+    country: Singapore
+    climate_label: Tropical hot humid
+    latitude: 1.3644
+    longitude: 103.9915
+    elevation_m: 7
+    timezone: Asia/Singapore
+    noaa:
+      station_id: "48698099999"
+    nasa:
+      enabled: true
+
+  - id: bangkok-don-mueang
+    name: Bangkok Don Mueang Area
+    country: Thailand
+    climate_label: Tropical hot humid
+    latitude: 13.9126
+    longitude: 100.6067
+    elevation_m: 3
+    timezone: Asia/Bangkok
+    noaa:
+      station_id: "48456099999"
+    nasa:
+      enabled: true
+
+  - id: delhi-new-delhi
+    name: Delhi New Delhi Area
+    country: India
+    climate_label: Extreme pre-monsoon heat
+    latitude: 28.5665
+    longitude: 77.1031
+    elevation_m: 237
+    timezone: Asia/Kolkata
+    noaa:
+      station_id: "42181099999"
+    nasa:
+      enabled: true
+
+  - id: chennai-meenambakkam
+    name: Chennai Meenambakkam Area
+    country: India
+    climate_label: Hot humid coastal
+    latitude: 12.9941
+    longitude: 80.1709
+    elevation_m: 16
+    timezone: Asia/Kolkata
+    noaa:
+      station_id: "43279099999"
+    nasa:
+      enabled: true
+
+  - id: darwin-airport
+    name: Darwin Airport
+    country: Australia
+    climate_label: Tropical monsoon hot humid
+    latitude: -12.4147
+    longitude: 130.8767
+    elevation_m: 31
+    timezone: Australia/Darwin
+    noaa:
+      station_id: "94120099999"
+    nasa:
+      enabled: true
+
+  - id: alice-springs-airport
+    name: Alice Springs Airport
+    country: Australia
+    climate_label: Hot dry outback
+    latitude: -23.8067
+    longitude: 133.9022
+    elevation_m: 545
+    timezone: Australia/Darwin
+    noaa:
+      station_id: "94326099999"
+    nasa:
+      enabled: true

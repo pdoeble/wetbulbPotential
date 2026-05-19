@@ -1,0 +1,11 @@
+data/raw/
+web/node_modules/
+web/dist/
+web/public/sql-wasm.wasm
+web/vite-dev.log
+web/preview.log
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+.DS_Store
