@@ -78,6 +78,13 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
 
     for panel in ["Data", "Plot", "Figure & Export"]:
         assert panel in index
+    assert "Locations" in index
+    assert 'id="locationMap"' in index
+    assert "updateLocationMap" in index
+    assert "selectLocationFromMap" in index
+    assert "plotly_click" in index
+    assert "scattergeo" in index
+    assert all("latitude" in location and "longitude" in location for location in data["locations"])
     for control in [
         "Data source",
         "Location",

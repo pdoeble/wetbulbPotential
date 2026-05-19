@@ -45,7 +45,7 @@ def _index_html() -> str:
         gap: 14px;
         padding: 14px;
       }
-      .source-box, .settings, .figure-area, .method {
+      .source-box, .settings, .map-panel, .figure-area, .method {
         background: #fff;
         border: 1px solid #cfd7e3;
         border-radius: 8px;
@@ -55,12 +55,35 @@ def _index_html() -> str:
         font-size: 13px;
       }
       .source-box a { color: #174ea6; }
+      .control-map-grid {
+        display: grid;
+        grid-template-columns: minmax(460px, 1fr) minmax(320px, 440px);
+        gap: 14px;
+        align-items: start;
+      }
       .settings {
         padding: 10px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
         gap: 10px;
         align-items: start;
+      }
+      .map-panel {
+        height: 360px;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+      }
+      .map-panel h2 {
+        margin: 0;
+        padding: 10px 12px 0;
+        font-size: 14px;
+        letter-spacing: 0;
+      }
+      #locationMap {
+        width: 100%;
+        height: 320px;
+        min-height: 0;
       }
       .panel {
         border: 1px solid #d9e0ea;
@@ -115,6 +138,11 @@ def _index_html() -> str:
         color: #39485d;
       }
       .method strong { color: #17202e; }
+      @media (max-width: 980px) {
+        .control-map-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -122,11 +150,17 @@ def _index_html() -> str:
       Data Plot Figure & Export Data source Location Metric Year start Year end Display Preset
       Show cell values Show isoline labels Figure title Font family Figure width [px]
       Figure height [px] Base font size Title font size Axis title font size Tick font size
-      Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
+      Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines Locations
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
-      <aside class="settings" id="settings"></aside>
+      <section class="control-map-grid">
+        <aside class="settings" id="settings"></aside>
+        <section class="map-panel">
+          <h2>Locations</h2>
+          <div id="locationMap"></div>
+        </section>
+      </section>
       <section class="figure-area">
         <div id="plot"></div>
       </section>
@@ -154,6 +188,7 @@ def _index_html() -> str:
           renderSourceBox();
           renderSettings();
           refreshDependentOptions();
+          updateLocationMap();
           updatePlot();
         });
 
@@ -221,6 +256,7 @@ def _index_html() -> str:
         input.addEventListener('input', () => {
           state[control.id] = control.type === 'number' ? Number(input.value) : input.value;
           refreshDependentOptions();
+          updateLocationMap();
           updatePlot();
         });
         label.appendChild(input);
@@ -278,6 +314,100 @@ def _index_html() -> str:
         if (Number(state.yearStart) < availability.year_min || Number(state.yearStart) > availability.year_max) state.yearStart = availability.year_min;
         if (Number(state.yearEnd) < availability.year_min || Number(state.yearEnd) > availability.year_max) state.yearEnd = availability.year_max;
         return years;
+      }
+
+      function updateLocationMap() {
+        const map = document.getElementById('locationMap');
+        if (!map || !appData.locations.length) return;
+        const currentSourceLocations = new Set(
+          appData.availability
+            .filter((item) => item.source === state.source)
+            .map((item) => item.location_id)
+        );
+        const markerColors = appData.locations.map((item) => {
+          if (item.id === state.location) return '#b3261e';
+          return currentSourceLocations.has(item.id) ? '#174ea6' : '#8c98a9';
+        });
+        const markerSizes = appData.locations.map((item) => item.id === state.location ? 12 : 7);
+        const markerOpacity = appData.locations.map((item) =>
+          item.id === state.location || currentSourceLocations.has(item.id) ? 1 : 0.55
+        );
+        Plotly.react('locationMap', [{
+          type: 'scattergeo',
+          mode: 'markers',
+          lat: appData.locations.map((item) => item.latitude),
+          lon: appData.locations.map((item) => item.longitude),
+          text: appData.locations.map((item) => locationMapLabel(item)),
+          customdata: appData.locations.map((item) => item.id),
+          marker: {
+            size: markerSizes,
+            color: markerColors,
+            opacity: markerOpacity,
+            line: { color: '#ffffff', width: 1 }
+          },
+          hovertemplate: '%{text}<extra></extra>'
+        }], {
+          geo: {
+            scope: 'world',
+            projection: { type: 'natural earth' },
+            showframe: false,
+            showland: true,
+            landcolor: '#edf2f7',
+            showcountries: true,
+            countrycolor: '#c7d0dd',
+            showcoastlines: true,
+            coastlinecolor: '#b9c4d3',
+            showocean: true,
+            oceancolor: '#ffffff',
+            bgcolor: '#ffffff'
+          },
+          margin: { l: 0, r: 0, t: 0, b: 0 },
+          paper_bgcolor: '#ffffff',
+          plot_bgcolor: '#ffffff'
+        }, {
+          responsive: true,
+          displayModeBar: false
+        });
+        if (!map.dataset.clickHandlerAttached) {
+          map.on('plotly_click', (event) => {
+            const locationId = event.points?.[0]?.customdata;
+            if (locationId) selectLocationFromMap(locationId);
+          });
+          map.dataset.clickHandlerAttached = 'true';
+        }
+      }
+
+      function locationMapLabel(location) {
+        const rows = [`<strong>${location.name}</strong>`, location.country];
+        if (location.climate_label) rows.push(location.climate_label);
+        if (location.elevation_m !== null && location.elevation_m !== undefined) {
+          rows.push(`${Number(location.elevation_m).toFixed(0)} m`);
+        }
+        return rows.join('<br>');
+      }
+
+      function selectLocationFromMap(locationId) {
+        const availability = preferredAvailabilityForLocation(locationId);
+        if (!availability) return;
+        state.source = availability.source;
+        state.location = availability.location_id;
+        state.metric = availability.metric;
+        state.yearStart = availability.year_min;
+        state.yearEnd = availability.year_max;
+        refreshDependentOptions();
+        updateLocationMap();
+        updatePlot();
+      }
+
+      function preferredAvailabilityForLocation(locationId) {
+        const options = appData.availability.filter((item) => item.location_id === locationId);
+        return (
+          options.find((item) => item.source === state.source && item.metric === state.metric) ||
+          options.find((item) => item.source === state.source && item.metric === 'delta_t_k') ||
+          options.find((item) => item.metric === state.metric) ||
+          options.find((item) => item.metric === 'delta_t_k') ||
+          options[0]
+        );
       }
 
       function updatePlot() {
