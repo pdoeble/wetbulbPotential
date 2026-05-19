@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "generated_from": "wetbulb_pipeline",
+  "database": {
+    "path": "data/wetbulb_processed.sqlite",
+    "size_bytes": 2916352
+  },
+  "locations": [
+    {
+      "id": "stuttgart-neckartal",
+      "name": "Stuttgart Neckartal",
+      "country": "Germany",
+      "climate_label": "Central European urban valley",
+      "latitude": 48.7896,
+      "longitude": 9.2167,
+      "elevation_m": 224.0,
+      "timezone": "Europe/Berlin",
+      "dwd_station_id": "04926",
+      "noaa_station_id": null,
+      "nasa_enabled": 1
+    }
+  ],
+  "availability": [
+    {
+      "source": "DWD",
+      "location_id": "stuttgart-neckartal",
+      "metric": "delta_t_k",
+      "year_min": 2002,
+      "year_max": 2013,
+      "cells": 3016
+    },
+    {
+      "source": "DWD",
+      "location_id": "stuttgart-neckartal",
+      "metric": "dry_bulb_c",
+      "year_min": 2002,
+      "year_max": 2013,
+      "cells": 3016
+    },
+    {
+      "source": "DWD",
+      "location_id": "stuttgart-neckartal",
+      "metric": "pressure_hpa",
+      "year_min": 2002,
+      "year_max": 2013,
+      "cells": 3016
+    },
+    {
+      "source": "DWD",
+      "location_id": "stuttgart-neckartal",
+      "metric": "relative_humidity_pct",
+      "year_min": 2002,
+      "year_max": 2013,
+      "cells": 3016
+    },
+    {
+      "source": "DWD",
+      "location_id": "stuttgart-neckartal",
+      "metric": "wet_bulb_c",
+      "year_min": 2002,
+      "year_max": 2013,
+      "cells": 3016
+    }
+  ],
+  "metrics": [
+    {
+      "id": "delta_t_k",
+      "label": "Delta T dry bulb - wet bulb",
+      "unit": "K"
+    },
+    {
+      "id": "dry_bulb_c",
+      "label": "Dry bulb temperature",
+      "unit": "degC"
+    },
+    {
+      "id": "wet_bulb_c",
+      "label": "Wet bulb temperature",
+      "unit": "degC"
+    },
+    {
+      "id": "relative_humidity_pct",
+      "label": "Relative humidity",
+      "unit": "%"
+    },
+    {
+      "id": "pressure_hpa",
+      "label": "Pressure",
+      "unit": "hPa"
+    }
+  ],
+  "plot_types": [
+    {
+      "id": "heatmap",
+      "label": "Heatmap"
+    },
+    {
+      "id": "contour",
+      "label": "Isolines"
+    },
+    {
+      "id": "combined",
+      "label": "Heatmap + isolines"
+    }
+  ],
+  "sources": [
+    {
+      "id": "DWD",
+      "label": "Deutscher Wetterdienst hourly moisture",
+      "url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/moisture/",
+      "license": "CC BY 4.0"
+    },
+    {
+      "id": "NOAA",
+      "label": "NOAA NCEI Global Hourly / ISD",
+      "url": "https://www.ncei.noaa.gov/data/global-hourly/access/",
+      "license": "NOAA open data"
+    },
+    {
+      "id": "NASA_POWER",
+      "label": "NASA POWER Hourly API",
+      "url": "https://power.larc.nasa.gov/docs/services/api/temporal/hourly/",
+      "license": "NASA POWER"
+    }
+  ]
+}
