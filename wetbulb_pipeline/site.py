@@ -41,20 +41,16 @@ def _index_html() -> str:
       main {
         min-height: 100vh;
         display: grid;
-        grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(460px, 1fr) auto;
         gap: 14px;
         padding: 14px;
       }
-      .settings, .figure-area {
+      .source-box, .settings, .figure-area, .method {
         background: #fff;
         border: 1px solid #cfd7e3;
         border-radius: 8px;
       }
       .source-box {
-        grid-column: 1 / -1;
-        background: #fff;
-        border: 1px solid #cfd7e3;
-        border-radius: 8px;
         padding: 10px 12px;
         font-size: 13px;
       }
@@ -62,24 +58,20 @@ def _index_html() -> str:
       .settings {
         padding: 10px;
         display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
         gap: 10px;
-        align-content: start;
+        align-items: start;
       }
       .panel {
         border: 1px solid #d9e0ea;
         border-radius: 8px;
         padding: 10px;
+        min-width: 0;
       }
       .panel h2 {
         margin: 0 0 9px;
         font-size: 14px;
         letter-spacing: 0;
-      }
-      .note {
-        margin-top: 8px;
-        color: #17202e;
-        font-size: 12px;
-        font-weight: 700;
       }
       label {
         display: grid;
@@ -99,6 +91,7 @@ def _index_html() -> str:
         background: #fff;
       }
       .check-row {
+        display: grid;
         grid-template-columns: auto 1fr;
         align-items: center;
       }
@@ -113,43 +106,42 @@ def _index_html() -> str:
         cursor: pointer;
       }
       .figure-area {
-        display: grid;
-        grid-template-rows: minmax(420px, auto) auto;
         overflow: hidden;
       }
-      #plot { width: 100%; min-height: 420px; }
+      #plot { width: 100%; min-height: 460px; }
       .method {
-        border-top: 1px solid #d9e0ea;
         padding: 12px;
         font-size: 13px;
         color: #39485d;
       }
       .method strong { color: #17202e; }
-      @media (max-width: 980px) {
-        main { grid-template-columns: 1fr; }
-        .source-box { grid-column: auto; }
-      }
     </style>
   </head>
   <body>
     <template id="required-controls">
-      Analysis Percentiles Lines & Legend Figure & Export Plot mode X axis Y axis Line color
-      Legend entries Display Legend Line shape Percentile dash Legend position Line width
-      Marker size Opacity Figure title Font family Figure width [px] Figure height [px]
-      Base font size Title font size Axis title font size Tick font size Legend font size
-      SAE options Show title Cycle line styles Export SVG
+      Data Plot Figure & Export Data source Location Metric Year start Year end Display Preset
+      Show cell values Show isoline labels Figure title Font family Figure width [px]
+      Figure height [px] Base font size Title font size Axis title font size Tick font size
+      Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
       <aside class="settings" id="settings"></aside>
       <section class="figure-area">
         <div id="plot"></div>
-        <div class="method" id="methodBox"></div>
       </section>
+      <div class="method" id="methodBox"></div>
     </main>
     <script>
-      const DASHES = ['solid', 'dash', 'dot', 'dashdot'];
-      const COLORS = ['#174ea6', '#b3261e', '#0b8043', '#7b1fa2', '#f29900', '#00838f'];
+      const HOURS = Array.from({ length: 24 }, (_, index) => index);
+      const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+      const COLORSCALE = [
+        [0, '#2451a6'],
+        [0.25, '#2aa7a2'],
+        [0.5, '#f1d46b'],
+        [0.75, '#ec8f3c'],
+        [1, '#a83232']
+      ];
 
       let appData;
       let state;
@@ -161,6 +153,7 @@ def _index_html() -> str:
           state = { ...data.defaults };
           renderSourceBox();
           renderSettings();
+          refreshDependentOptions();
           updatePlot();
         });
 
@@ -168,8 +161,7 @@ def _index_html() -> str:
         const links = appData.sourceNote.links
           .map((link) => `<a href="${link.url}" target="_blank" rel="noreferrer">${link.label}</a>`)
           .join(' · ');
-        document.getElementById('sourceBox').innerHTML =
-          `<strong>Sources:</strong> ${links}`;
+        document.getElementById('sourceBox').innerHTML = `<strong>Sources:</strong> ${links}`;
         document.getElementById('methodBox').innerHTML =
           `<strong>${appData.sourceNote.title}.</strong> ${appData.sourceNote.html}`;
       }
@@ -186,7 +178,6 @@ def _index_html() -> str:
           }
           settings.appendChild(section);
         }
-        refreshDependentOptions();
       }
 
       function renderControl(control) {
@@ -203,12 +194,6 @@ def _index_html() -> str:
             });
           });
           return button;
-        }
-        if (control.type === 'note') {
-          const note = document.createElement('div');
-          note.className = 'note';
-          note.textContent = control.label;
-          return note;
         }
         const label = document.createElement('label');
         label.textContent = control.label;
@@ -230,7 +215,7 @@ def _index_html() -> str:
         if (control.type !== 'select') {
           input.type = control.type;
           input.value = state[control.id] ?? '';
-          if (control.type === 'number') input.step = '0.1';
+          if (control.type === 'number') input.step = '1';
         }
         if (control.options) fillOptions(input, control.options);
         input.addEventListener('input', () => {
@@ -242,7 +227,18 @@ def _index_html() -> str:
         return label;
       }
 
+      function refreshDependentOptions() {
+        fillOptions(document.getElementById('source'), availableSources());
+        fillOptions(document.getElementById('location'), availableLocations());
+        fillOptions(document.getElementById('metric'), availableMetrics());
+        fillOptions(document.getElementById('yearStart'), availableYears());
+        fillOptions(document.getElementById('yearEnd'), availableYears());
+        fillOptions(document.getElementById('plotType'), appData.plotTypes);
+      }
+
       function fillOptions(select, options) {
+        if (!select) return;
+        const current = state[select.id];
         select.innerHTML = '';
         for (const option of options) {
           const node = document.createElement('option');
@@ -250,38 +246,43 @@ def _index_html() -> str:
           node.textContent = option.label ?? option;
           select.appendChild(node);
         }
-        select.value = state[select.id] ?? select.options[0]?.value ?? '';
+        const values = Array.from(select.options).map((option) => option.value);
+        if (!values.includes(String(current))) {
+          state[select.id] = select.options[0]?.value ?? '';
+        }
+        select.value = state[select.id] ?? '';
       }
 
-      function refreshDependentOptions() {
-        fillOptions(document.getElementById('xAxis'), appData.axes.x);
-        fillOptions(document.getElementById('yAxis'), appData.axes.y);
-        fillOptions(document.getElementById('lineColor'), appData.axes.lineColor);
-        fillOptions(document.getElementById('source'), appData.sources.map((item) => ({ id: item.id, label: item.label })));
-        fillOptions(document.getElementById('location'), appData.locations.map((item) => ({ id: item.id, label: item.name })));
-        fillOptions(document.getElementById('metric'), appData.metrics.map((item) => ({ id: item.id, label: item.label })));
-        const years = Array.from(new Set(appData.series.map((item) => item.year))).sort();
-        fillOptions(document.getElementById('yearStart'), years);
-        fillOptions(document.getElementById('yearEnd'), years);
+      function availableSources() {
+        const ids = [...new Set(appData.availability.map((item) => item.source))].sort();
+        return ids.map((id) => ({ id, label: appData.sources.find((item) => item.id === id)?.label ?? id }));
       }
 
-      function filteredSeries() {
-        return appData.series.filter((item) =>
-          item.source === state.source &&
-          item.location === state.location &&
-          item.metric === state.metric &&
-          item.year >= Number(state.yearStart) &&
-          item.year <= Number(state.yearEnd)
+      function availableLocations() {
+        const ids = new Set(appData.availability.filter((item) => item.source === state.source).map((item) => item.location_id));
+        return appData.locations.filter((item) => ids.has(item.id)).map((item) => ({ id: item.id, label: item.name }));
+      }
+
+      function availableMetrics() {
+        const ids = new Set(appData.availability.filter((item) => item.source === state.source && item.location_id === state.location).map((item) => item.metric));
+        return appData.metrics.filter((item) => ids.has(item.id)).map((item) => ({ id: item.id, label: item.label }));
+      }
+
+      function availableYears() {
+        const availability = appData.availability.find((item) =>
+          item.source === state.source && item.location_id === state.location && item.metric === state.metric
         );
+        if (!availability) return [];
+        const years = [];
+        for (let year = availability.year_min; year <= availability.year_max; year += 1) years.push(year);
+        if (Number(state.yearStart) < availability.year_min || Number(state.yearStart) > availability.year_max) state.yearStart = availability.year_min;
+        if (Number(state.yearEnd) < availability.year_min || Number(state.yearEnd) > availability.year_max) state.yearEnd = availability.year_max;
+        return years;
       }
 
       function updatePlot() {
-        const series = filteredSeries();
-        const yKey = state.yAxis;
-        const data = state.plotMode === 'Vehicles'
-          ? vehicleTraces(series, yKey)
-          : percentileTraces(series, yKey);
-        Plotly.react('plot', data, layout(series), {
+        const matrix = buildMatrix();
+        Plotly.react('plot', plotData(matrix), layout(), {
           responsive: true,
           displaylogo: false,
           toImageButtonOptions: {
@@ -293,73 +294,67 @@ def _index_html() -> str:
         });
       }
 
-      function vehicleTraces(series, yKey) {
-        const groups = new Map();
-        return series.map((item, index) => {
-          const group = colorGroup(item);
-          const seen = groups.has(group);
-          groups.set(group, true);
-          return {
-            type: 'scatter',
-            mode: Number(state.markerSize) > 0 ? 'lines+markers' : 'lines',
-            name: group,
-            legendgroup: group,
-            showlegend: !seen,
-            x: item.x,
-            y: item[yKey],
-            line: {
-              color: COLORS[index % COLORS.length],
-              width: Number(state.lineWidth),
-              shape: lineShape()
-            },
-            marker: { size: Number(state.markerSize) },
-            opacity: Number(state.opacity)
-          };
-        });
-      }
-
-      function percentileTraces(series, yKey) {
-        const curves = computePercentiles(series, state.percentiles, yKey);
-        if (state.percentileDisplay === 'Interpolated color field') {
-          return [{
-            type: 'contour',
-            x: curves[0]?.x ?? [],
-            y: curves.map((curve) => curve.percentile),
-            z: curves.map((curve) => curve.y),
-            colorscale: 'Viridis',
-            contours: { coloring: 'heatmap', showlabels: true },
-            colorbar: state.percentileLegend === 'Colorbar' ? { title: yAxisTitle() } : undefined,
-            showscale: state.percentileLegend === 'Colorbar',
-            hovertemplate: 'Hour %{x}<br>Percentile %{y}<br>Value %{z:.2f}<extra></extra>'
-          }];
+      function buildMatrix() {
+        const weighted = MONTHS.map(() => HOURS.map(() => 0));
+        const counts = MONTHS.map(() => HOURS.map(() => 0));
+        for (const cell of appData.cells) {
+          if (
+            cell.source !== state.source ||
+            cell.location !== state.location ||
+            cell.metric !== state.metric ||
+            cell.year < Number(state.yearStart) ||
+            cell.year > Number(state.yearEnd)
+          ) continue;
+          const month = Number(cell.month) - 1;
+          const hour = Number(cell.hour);
+          weighted[month][hour] += Number(cell.mean) * Number(cell.count);
+          counts[month][hour] += Number(cell.count);
         }
-        const legendTokens = new Set(parsePercentiles(state.legendEntries).map((item) => item.token));
-        const visibleCurves = [...curves].reverse();
-        return visibleCurves.map((curve, index) => ({
-          type: 'scatter',
-          mode: Number(state.markerSize) > 0 ? 'lines+markers' : 'lines',
-          name: curve.label,
-          x: curve.x,
-          y: curve.y,
-          showlegend: state.percentileLegend === 'Legend entries' && legendTokens.has(curve.token),
-          line: {
-            color: percentileColor(curve.percentile),
-            width: Number(state.lineWidth),
-            dash: percentileDash(index),
-            shape: lineShape()
-          },
-          marker: { size: Number(state.markerSize) },
-          opacity: Number(state.opacity)
-        }));
+        return MONTHS.map((_, month) => HOURS.map((_, hour) =>
+          counts[month][hour] ? weighted[month][hour] / counts[month][hour] : null
+        ));
       }
 
-      function layout(series) {
-        const title = state.showTitle ? `<b>${state.figureTitle}</b>` : '';
+      function plotData(matrix) {
+        const metric = selectedMetric();
+        const hovertemplate = `Month %{y}<br>Hour %{x}:00<br>${metric.label} %{z:.2f} ${metric.unit}<extra></extra>`;
+        const heatmap = {
+          type: 'heatmap',
+          x: HOURS,
+          y: MONTHS,
+          z: matrix,
+          colorscale: COLORSCALE,
+          colorbar: { title: { text: metric.unit } },
+          hovertemplate,
+          text: state.showValues ? matrix.map((row) => row.map((value) => value == null ? '' : value.toFixed(2))) : undefined,
+          texttemplate: state.showValues ? '%{text}' : undefined,
+          textfont: { size: Math.max(8, Number(state.tickFontSize) - 4), color: '#152033' }
+        };
+        const contour = {
+          type: 'contour',
+          x: HOURS,
+          y: MONTHS,
+          z: matrix,
+          contours: {
+            coloring: state.plotType === 'combined' ? 'none' : 'none',
+            showlabels: Boolean(state.showContourLabels)
+          },
+          line: { color: '#111827', width: state.preset === 'sae' ? 1.1 : 0.9 },
+          showscale: false,
+          hovertemplate
+        };
+        if (state.plotType === 'heatmap') return [heatmap];
+        if (state.plotType === 'contour') return [contour];
+        return [heatmap, contour];
+      }
+
+      function layout() {
+        const metric = selectedMetric();
         return {
           width: Number(state.figureWidth),
           height: Number(state.figureHeight),
           title: {
-            text: title,
+            text: state.showTitle ? `<b>${state.figureTitle}</b>` : '',
             x: 0.5,
             xanchor: 'center',
             font: { size: Number(state.titleFontSize), family: state.fontFamily }
@@ -372,124 +367,44 @@ def _index_html() -> str:
             color: '#17202e'
           },
           xaxis: {
-            title: { text: xAxisTitle(), font: { size: Number(state.axisTitleFontSize) } },
+            title: { text: 'Local hour [h]', font: { size: Number(state.axisTitleFontSize) } },
+            tickmode: 'array',
+            tickvals: HOURS,
             tickfont: { size: Number(state.tickFontSize) },
-            gridcolor: '#d9dde5',
+            gridcolor: state.preset === 'sae' ? '#d7dce3' : '#edf0f4',
             linecolor: '#000000',
             zeroline: false
           },
           yaxis: {
-            title: { text: yAxisTitle(series), font: { size: Number(state.axisTitleFontSize) } },
+            title: { text: 'Month [-]', font: { size: Number(state.axisTitleFontSize) } },
+            tickmode: 'array',
+            tickvals: MONTHS,
+            autorange: 'reversed',
             tickfont: { size: Number(state.tickFontSize) },
-            gridcolor: '#d9dde5',
+            gridcolor: state.preset === 'sae' ? '#d7dce3' : '#edf0f4',
             linecolor: '#000000',
             zeroline: false
           },
-          legend: legendLayout(),
-          margin: { l: 70, r: 20, t: state.showTitle ? 55 : 20, b: 60 }
+          margin: { l: 70, r: 55, t: state.showTitle ? 55 : 20, b: 60 },
+          annotations: [{
+            text: `${selectedLocation().name} · ${state.source} · ${metric.label} [${metric.unit}] · ${state.yearStart}-${state.yearEnd}`,
+            xref: 'paper',
+            yref: 'paper',
+            x: 0,
+            y: -0.18,
+            showarrow: false,
+            xanchor: 'left',
+            font: { size: Math.max(10, Number(state.legendFontSize) - 2), color: '#4a5870' }
+          }]
         };
       }
 
-      function xAxisTitle() {
-        return appData.axes.x.find((item) => item.id === state.xAxis)?.label ?? 'Local hour [h]';
+      function selectedMetric() {
+        return appData.metrics.find((item) => item.id === state.metric) ?? { label: 'Value', unit: '' };
       }
 
-      function yAxisTitle(series) {
-        if (state.yAxis === 'relative_value') return 'Relative wetbulb spread [%]';
-        const metric = appData.metrics.find((item) => item.id === state.metric);
-        return metric ? `${metric.label} [${metric.unit}]` : 'Value';
-      }
-
-      function colorGroup(item) {
-        if (state.lineColor === 'month') return item.monthLabel;
-        if (state.lineColor === 'year') return String(item.year);
-        if (state.lineColor === 'source') return item.source;
-        if (state.lineColor === 'location') return item.locationLabel;
-        return item.label;
-      }
-
-      function lineShape() {
-        if (state.lineShape === 'step hv') return 'hv';
-        if (state.lineShape === 'step vh') return 'vh';
-        if (state.lineShape === 'smoothed') return 'spline';
-        return 'linear';
-      }
-
-      function percentileDash(index) {
-        if (state.percentileDash === 'Cycle line styles' || state.cycleLineStyles) {
-          return DASHES[index % DASHES.length];
-        }
-        const map = { Solid: 'solid', Dash: 'dash', Dot: 'dot', 'Dash-dot': 'dashdot' };
-        return map[state.percentileDash] ?? 'solid';
-      }
-
-      function percentileColor(percentile) {
-        const hue = 220 - (percentile / 100) * 200;
-        return `hsl(${hue}, 70%, 40%)`;
-      }
-
-      function legendLayout() {
-        const base = { font: { size: Number(state.legendFontSize), family: state.fontFamily } };
-        const position = state.legendPosition;
-        if (position === 'Top') return { ...base, orientation: 'h', x: 0.5, y: 1.15, xanchor: 'center' };
-        if (position === 'Bottom') return { ...base, orientation: 'h', x: 0.5, y: -0.22, xanchor: 'center' };
-        if (position === 'Right') return { ...base, x: 1.02, y: 1, xanchor: 'left' };
-        if (position === 'Inside bottom left') return { ...base, x: 0.02, y: 0.02 };
-        if (position === 'Inside bottom right') return { ...base, x: 0.98, y: 0.02, xanchor: 'right' };
-        return { ...base, x: 0.98, y: 0.98, xanchor: 'right' };
-      }
-
-      function parsePercentiles(text) {
-        return text.split(',').map((token) => token.trim()).filter(Boolean).map((token) => {
-          if (token.toLowerCase() === 'worst') return { token: 'Worst', percentile: 0, label: 'Worst' };
-          if (token.toLowerCase() === 'top') return { token: 'Top', percentile: 100, label: 'Top' };
-          const value = Number(token.replace('%', '').trim());
-          return { token, percentile: value, label: `${value}% Percentile` };
-        });
-      }
-
-      function computePercentiles(series, text, yKey) {
-        const specs = parsePercentiles(text);
-        const xGrid = [...new Set(series.flatMap((item) => item.x))].sort((a, b) => a - b);
-        const interpolated = series.map((item) => interpolate(item.x, item[yKey], xGrid));
-        return specs.map((spec) => ({
-          ...spec,
-          x: xGrid,
-          y: xGrid.map((_, column) => percentile(interpolated.map((row) => row[column]), spec.percentile))
-        }));
-      }
-
-      function interpolate(x, y, grid) {
-        const pairs = x.map((value, index) => [Number(value), y[index]])
-          .filter((pair) => pair[1] !== null && pair[1] !== undefined && !Number.isNaN(pair[1]))
-          .sort((a, b) => a[0] - b[0]);
-        if (!pairs.length) return grid.map(() => NaN);
-        if (pairs.length === 1) return grid.map(() => pairs[0][1]);
-        return grid.map((target) => {
-          if (target <= pairs[0][0]) return pairs[0][1];
-          if (target >= pairs[pairs.length - 1][0]) return pairs[pairs.length - 1][1];
-          for (let index = 1; index < pairs.length; index += 1) {
-            if (pairs[index][0] >= target) {
-              const [x0, y0] = pairs[index - 1];
-              const [x1, y1] = pairs[index];
-              const fraction = (target - x0) / (x1 - x0);
-              return y0 * (1 - fraction) + y1 * fraction;
-            }
-          }
-          return pairs[pairs.length - 1][1];
-        });
-      }
-
-      function percentile(values, p) {
-        const clean = values.filter((value) => value !== null && value !== undefined && !Number.isNaN(value)).sort((a, b) => a - b);
-        if (!clean.length) return NaN;
-        if (clean.length === 1) return clean[0];
-        const rank = (p / 100) * (clean.length - 1);
-        const low = Math.floor(rank);
-        const high = Math.ceil(rank);
-        if (low === high) return clean[low];
-        const fraction = rank - low;
-        return clean[low] * (1 - fraction) + clean[high] * fraction;
+      function selectedLocation() {
+        return appData.locations.find((item) => item.id === state.location) ?? { name: '' };
       }
     </script>
   </body>

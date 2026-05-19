@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from .visualization import build_visualization_data, compute_percentile_curves
+from .visualization import build_matrix, build_visualization_data
+
+HOURS = list(range(24))
+MONTHS = list(range(1, 13))
+COLORSCALE = [
+    [0, "#2451a6"],
+    [0.25, "#2aa7a2"],
+    [0.5, "#f1d46b"],
+    [0.75, "#ec8f3c"],
+    [1, "#a83232"],
+]
 
 
 def create_dash_app(data_dir: str = "web/public/data"):
@@ -29,8 +39,19 @@ def create_dash_app(data_dir: str = "web/public/data"):
                     ],
                 ],
                 className="source-box",
+                style=_box_style(),
             ),
-            html.Aside(_settings_layout(app_data), className="settings"),
+            html.Aside(
+                _settings_layout(app_data),
+                className="settings",
+                style={
+                    **_box_style(),
+                    "display": "grid",
+                    "gridTemplateColumns": "repeat(auto-fit, minmax(230px, 1fr))",
+                    "gap": "10px",
+                    "padding": "10px",
+                },
+            ),
             html.Section(
                 [
                     dcc.Graph(
@@ -45,52 +66,45 @@ def create_dash_app(data_dir: str = "web/public/data"):
                             },
                         },
                     ),
-                    html.Div(
-                        [
-                            html.Strong(f"{app_data['sourceNote']['title']}. "),
-                            dcc.Markdown(
-                                app_data["sourceNote"]["html"],
-                                dangerously_allow_html=True,
-                            ),
-                        ],
-                        className="method",
-                    ),
                 ],
                 className="figure-area",
+                style=_box_style(),
+            ),
+            html.Div(
+                [
+                    html.Strong(f"{app_data['sourceNote']['title']}. "),
+                    dcc.Markdown(
+                        app_data["sourceNote"]["html"],
+                        dangerously_allow_html=True,
+                    ),
+                ],
+                className="method",
+                style={**_box_style(), "padding": "12px", "fontSize": "13px"},
             ),
         ],
         className="dash-app",
         style={
             "display": "grid",
-            "gridTemplateColumns": "minmax(300px, 380px) minmax(0, 1fr)",
+            "gridTemplateRows": "auto auto minmax(460px, 1fr) auto",
             "gap": "14px",
             "padding": "14px",
             "background": "#f5f7fa",
+            "minHeight": "100vh",
         },
     )
 
     @app.callback(
         Output("plot", "figure"),
         [
-            Input("plotMode", "value"),
-            Input("xAxis", "value"),
-            Input("yAxis", "value"),
-            Input("lineColor", "value"),
             Input("source", "value"),
             Input("location", "value"),
             Input("metric", "value"),
             Input("yearStart", "value"),
             Input("yearEnd", "value"),
-            Input("percentiles", "value"),
-            Input("legendEntries", "value"),
-            Input("percentileDisplay", "value"),
-            Input("percentileLegend", "value"),
-            Input("lineShape", "value"),
-            Input("percentileDash", "value"),
-            Input("legendPosition", "value"),
-            Input("lineWidth", "value"),
-            Input("markerSize", "value"),
-            Input("opacity", "value"),
+            Input("plotType", "value"),
+            Input("preset", "value"),
+            Input("showValues", "value"),
+            Input("showContourLabels", "value"),
             Input("figureTitle", "value"),
             Input("fontFamily", "value"),
             Input("figureWidth", "value"),
@@ -101,30 +115,19 @@ def create_dash_app(data_dir: str = "web/public/data"):
             Input("tickFontSize", "value"),
             Input("legendFontSize", "value"),
             Input("showTitle", "value"),
-            Input("cycleLineStyles", "value"),
         ],
     )
     def _update_figure(*values):
         keys = [
-            "plotMode",
-            "xAxis",
-            "yAxis",
-            "lineColor",
             "source",
             "location",
             "metric",
             "yearStart",
             "yearEnd",
-            "percentiles",
-            "legendEntries",
-            "percentileDisplay",
-            "percentileLegend",
-            "lineShape",
-            "percentileDash",
-            "legendPosition",
-            "lineWidth",
-            "markerSize",
-            "opacity",
+            "plotType",
+            "preset",
+            "showValues",
+            "showContourLabels",
             "figureTitle",
             "fontFamily",
             "figureWidth",
@@ -135,11 +138,13 @@ def create_dash_app(data_dir: str = "web/public/data"):
             "tickFontSize",
             "legendFontSize",
             "showTitle",
-            "cycleLineStyles",
         ]
         settings = dict(zip(keys, values, strict=True))
+        settings["showValues"] = "Show cell values" in (settings["showValues"] or [])
+        settings["showContourLabels"] = "Show isoline labels" in (
+            settings["showContourLabels"] or []
+        )
         settings["showTitle"] = "Show title" in (settings["showTitle"] or [])
-        settings["cycleLineStyles"] = "Cycle line styles" in (settings["cycleLineStyles"] or [])
         return build_dash_figure(app_data, settings)
 
     return app
@@ -149,23 +154,27 @@ def _settings_layout(app_data: dict[str, Any]) -> list:
     from dash import html
 
     defaults = app_data["defaults"]
-    years = sorted({item["year"] for item in app_data["series"]})
+    years = sorted({item["year"] for item in app_data["cells"]})
     dynamic_options = {
-        "xAxis": app_data["axes"]["x"],
-        "yAxis": app_data["axes"]["y"],
-        "lineColor": app_data["axes"]["lineColor"],
         "source": [{"id": item["id"], "label": item["label"]} for item in app_data["sources"]],
         "location": [{"id": item["id"], "label": item["name"]} for item in app_data["locations"]],
         "metric": [{"id": item["id"], "label": item["label"]} for item in app_data["metrics"]],
         "yearStart": [{"id": year, "label": str(year)} for year in years],
         "yearEnd": [{"id": year, "label": str(year)} for year in years],
+        "plotType": app_data["plotTypes"],
     }
     sections = []
     for panel in app_data["panels"]:
-        children = [html.H2(panel["title"])]
+        children = [html.H2(panel["title"], style={"fontSize": "14px", "margin": "0 0 9px"})]
         for control in panel["controls"]:
             children.append(_dash_control(control, defaults, dynamic_options))
-        sections.append(html.Section(children, className="panel"))
+        sections.append(
+            html.Section(
+                children,
+                className="panel",
+                style={"border": "1px solid #d9e0ea", "borderRadius": "8px", "padding": "10px"},
+            )
+        )
     return sections
 
 
@@ -178,13 +187,19 @@ def _dash_control(
 
     control_id = control["id"]
     label = control["label"]
+    label_style = {
+        "display": "grid",
+        "gap": "4px",
+        "margin": "7px 0",
+        "fontSize": "12px",
+        "fontWeight": "600",
+        "color": "#4a5870",
+    }
     if control["type"] == "button":
-        return html.Button(label, id=control_id)
-    if control["type"] == "note":
-        return html.Div(label, className="note")
+        return html.Button(label, id=control_id, style={"width": "100%", "minHeight": "32px"})
     if control["type"] == "checkbox":
         values = [label] if defaults.get(control_id) else []
-        return html.Label([dcc.Checklist([label], values, id=control_id)])
+        return html.Label([dcc.Checklist([label], values, id=control_id)], style=label_style)
     if control["type"] == "select":
         options = control.get("options") or dynamic_options.get(control_id, [])
         dash_options = [
@@ -194,74 +209,61 @@ def _dash_control(
             for option in options
         ]
         return html.Label(
-            [label, dcc.Dropdown(dash_options, defaults.get(control_id), id=control_id)]
+            [label, dcc.Dropdown(dash_options, defaults.get(control_id), id=control_id)],
+            style=label_style,
         )
     input_type = "number" if control["type"] == "number" else "text"
     return html.Label(
-        [label, dcc.Input(id=control_id, type=input_type, value=defaults.get(control_id))]
+        [label, dcc.Input(id=control_id, type=input_type, value=defaults.get(control_id))],
+        style=label_style,
     )
 
 
 def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
     import plotly.graph_objects as go
 
-    series = [
-        item
-        for item in app_data["series"]
-        if item["source"] == settings["source"]
-        and item["location"] == settings["location"]
-        and item["metric"] == settings["metric"]
-        and int(settings["yearStart"]) <= item["year"] <= int(settings["yearEnd"])
-    ]
+    metric = _metric(app_data, settings["metric"])
+    matrix = build_matrix(
+        app_data["cells"],
+        settings["source"],
+        settings["location"],
+        settings["metric"],
+        int(settings["yearStart"]),
+        int(settings["yearEnd"]),
+    )
     fig = go.Figure()
-    if settings["plotMode"] == "Vehicles":
-        for item in series:
-            fig.add_trace(
-                go.Scatter(
-                    x=item["x"],
-                    y=item[settings["yAxis"]],
-                    mode="lines+markers" if float(settings["markerSize"]) > 0 else "lines",
-                    name=_group_label(item, settings["lineColor"]),
-                    legendgroup=_group_label(item, settings["lineColor"]),
-                    line={
-                        "width": float(settings["lineWidth"]),
-                        "shape": _line_shape(settings["lineShape"]),
-                    },
-                    marker={"size": float(settings["markerSize"])},
-                    opacity=float(settings["opacity"]),
-                    showlegend=True,
-                )
+    if settings["plotType"] in {"heatmap", "combined"}:
+        fig.add_trace(
+            go.Heatmap(
+                x=HOURS,
+                y=MONTHS,
+                z=matrix,
+                colorscale=COLORSCALE,
+                colorbar={"title": {"text": metric["unit"]}},
+                hovertemplate=(
+                    "Month %{y}<br>Hour %{x}:00<br>"
+                    f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
+                ),
+                text=_cell_text(matrix) if settings["showValues"] else None,
+                texttemplate="%{text}" if settings["showValues"] else None,
+                textfont={"size": max(8, int(settings["tickFontSize"]) - 4)},
             )
-    else:
-        curves = compute_percentile_curves(series, settings["percentiles"], settings["yAxis"])
-        if settings["percentileDisplay"] == "Interpolated color field":
-            fig.add_trace(
-                go.Contour(
-                    x=curves[0]["x"] if curves else [],
-                    y=[curve["percentile"] for curve in curves],
-                    z=[curve["y"] for curve in curves],
-                    colorscale="Viridis",
-                    contours={"coloring": "heatmap", "showlabels": True},
-                    showscale=settings["percentileLegend"] == "Colorbar",
-                )
+        )
+    if settings["plotType"] in {"contour", "combined"}:
+        fig.add_trace(
+            go.Contour(
+                x=HOURS,
+                y=MONTHS,
+                z=matrix,
+                contours={"coloring": "none", "showlabels": settings["showContourLabels"]},
+                line={"color": "#111827", "width": 1.1 if settings["preset"] == "sae" else 0.9},
+                showscale=False,
+                hovertemplate=(
+                    "Month %{y}<br>Hour %{x}:00<br>"
+                    f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
+                ),
             )
-        else:
-            for index, curve in enumerate(reversed(curves)):
-                fig.add_trace(
-                    go.Scatter(
-                        x=curve["x"],
-                        y=curve["y"],
-                        mode="lines+markers" if float(settings["markerSize"]) > 0 else "lines",
-                        name=curve["label"],
-                        line={
-                            "width": float(settings["lineWidth"]),
-                            "dash": _dash(settings, index),
-                            "shape": _line_shape(settings["lineShape"]),
-                        },
-                        marker={"size": float(settings["markerSize"])},
-                        opacity=float(settings["opacity"]),
-                    )
-                )
+        )
 
     fig.update_layout(
         width=int(settings["figureWidth"]),
@@ -280,79 +282,65 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 "text": "Local hour [h]",
                 "font": {"size": int(settings["axisTitleFontSize"])},
             },
+            "tickmode": "array",
+            "tickvals": HOURS,
             "tickfont": {"size": int(settings["tickFontSize"])},
-            "gridcolor": "#d9dde5",
+            "gridcolor": "#d7dce3" if settings["preset"] == "sae" else "#edf0f4",
             "linecolor": "black",
             "zeroline": False,
         },
         yaxis={
             "title": {
-                "text": _y_axis_title(app_data, settings),
+                "text": "Month [-]",
                 "font": {"size": int(settings["axisTitleFontSize"])},
             },
+            "tickmode": "array",
+            "tickvals": MONTHS,
+            "autorange": "reversed",
             "tickfont": {"size": int(settings["tickFontSize"])},
-            "gridcolor": "#d9dde5",
+            "gridcolor": "#d7dce3" if settings["preset"] == "sae" else "#edf0f4",
             "linecolor": "black",
             "zeroline": False,
         },
-        legend=_legend_position(settings["legendPosition"], int(settings["legendFontSize"])),
+        margin={"l": 70, "r": 55, "t": 55 if settings["showTitle"] else 20, "b": 60},
+        annotations=[
+            {
+                "text": (
+                    f"{_location(app_data, settings['location'])['name']} · "
+                    f"{settings['source']} · {metric['label']} [{metric['unit']}] · "
+                    f"{settings['yearStart']}-{settings['yearEnd']}"
+                ),
+                "xref": "paper",
+                "yref": "paper",
+                "x": 0,
+                "y": -0.18,
+                "showarrow": False,
+                "xanchor": "left",
+                "font": {"size": max(10, int(settings["legendFontSize"]) - 2), "color": "#4a5870"},
+            }
+        ],
     )
     return fig
 
 
-def _group_label(item: dict[str, Any], line_color: str) -> str:
-    if line_color == "month":
-        return item["monthLabel"]
-    if line_color == "year":
-        return str(item["year"])
-    if line_color == "source":
-        return item["source"]
-    if line_color == "location":
-        return item["locationLabel"]
-    return item["label"]
+def _cell_text(matrix: list[list[float | None]]) -> list[list[str]]:
+    return [["" if value is None else f"{value:.2f}" for value in row] for row in matrix]
 
 
-def _line_shape(value: str) -> str:
-    if value == "step hv":
-        return "hv"
-    if value == "step vh":
-        return "vh"
-    if value == "smoothed":
-        return "spline"
-    return "linear"
+def _metric(app_data: dict[str, Any], metric_id: str) -> dict[str, Any]:
+    return next((item for item in app_data["metrics"] if item["id"] == metric_id), {})
 
 
-def _dash(settings: dict[str, Any], index: int) -> str:
-    if settings["percentileDash"] == "Cycle line styles" or settings["cycleLineStyles"]:
-        return ["solid", "dash", "dot", "dashdot"][index % 4]
+def _location(app_data: dict[str, Any], location_id: str) -> dict[str, Any]:
+    return next((item for item in app_data["locations"] if item["id"] == location_id), {})
+
+
+def _box_style() -> dict[str, str]:
     return {
-        "Solid": "solid",
-        "Dash": "dash",
-        "Dot": "dot",
-        "Dash-dot": "dashdot",
-    }.get(settings["percentileDash"], "solid")
-
-
-def _y_axis_title(app_data: dict[str, Any], settings: dict[str, Any]) -> str:
-    if settings["yAxis"] == "relative_value":
-        return "Relative wetbulb spread [%]"
-    metric = next(item for item in app_data["metrics"] if item["id"] == settings["metric"])
-    return f"{metric['label']} [{metric['unit']}]"
-
-
-def _legend_position(position: str, font_size: int) -> dict[str, Any]:
-    base: dict[str, Any] = {"font": {"size": font_size}}
-    if position == "Top":
-        return {**base, "orientation": "h", "x": 0.5, "y": 1.15, "xanchor": "center"}
-    if position == "Bottom":
-        return {**base, "orientation": "h", "x": 0.5, "y": -0.22, "xanchor": "center"}
-    if position == "Right":
-        return {**base, "x": 1.02, "y": 1, "xanchor": "left"}
-    if position == "Inside bottom left":
-        return {**base, "x": 0.02, "y": 0.02}
-    if position == "Inside bottom right":
-        return {**base, "x": 0.98, "y": 0.02, "xanchor": "right"}
-    return {**base, "x": 0.98, "y": 0.98, "xanchor": "right"}
+        "background": "#fff",
+        "border": "1px solid #cfd7e3",
+        "borderRadius": "8px",
+    }
 
 
 def run_dash(data_dir: str, host: str, port: int, debug: bool = False) -> None:

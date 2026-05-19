@@ -119,7 +119,6 @@ CREATE TABLE aggregates (
   mean REAL NOT NULL,
   min REAL NOT NULL,
   max REAL NOT NULL,
-  p95 REAL NOT NULL,
   PRIMARY KEY (source, location_id, metric, year, month, hour_local)
 );
 

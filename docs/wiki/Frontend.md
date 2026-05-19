@@ -21,14 +21,14 @@ erzeugt.
 
 Die Settings sind identisch fuer Dash und statische Seite:
 
-- `Analysis`
-- `Percentiles`
-- `Lines & Legend`
+- `Data`
+- `Plot`
 - `Figure & Export`
+
+Die Panels stehen auf breiten Viewports als Spalten nebeneinander.
 
 ## Plottypen
 
-- `Vehicles`: jede Datenreihe als Linie
-- `Percentiles`: Perzentile ueber die ausgewaehlten Datenreihen
-- `Interpolated color field`: Falschfarbenfeld zwischen Worst und Top
-
+- `Heatmap`: 12 x 24 Colorplot
+- `Isolines`: 12 x 24 Isoliniendarstellung
+- `Heatmap + isolines`: Colorplot mit ueberlagerten Isolinien, Default

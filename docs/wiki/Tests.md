@@ -13,7 +13,7 @@ Abgedeckt:
 - DWD/NOAA/NASA Parser
 - idempotenter Import
 - Export von Manifest und prozessierter SQLite-Datei
-- Percentile-Parsing und Percentile-Berechnung
+- 12 x 24 Matrixbildung fuer die Visualisierung
 - Site-Schema mit `index.html`, `assets/data.json`, `.nojekyll`
 - Standard-Controls und Default-Werte
 
@@ -37,4 +37,3 @@ Dann per Browser oder Playwright pruefen:
 - Default-Settings stimmen
 - Settings-Panels existieren
 - SVG-Export ist erreichbar
-

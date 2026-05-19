@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
-from collections import defaultdict
-from collections.abc import Iterable
 from pathlib import Path
 
 from .database import PROCESSED_SCHEMA, connect, init_raw_db
@@ -105,11 +103,30 @@ def export_processed(
                 """
                 INSERT INTO aggregates (
                   source, location_id, metric, year, month, hour_local, count,
-                  mean, min, max, p95
+                  mean, min, max
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                _aggregate_metric(raw, metric, str(info["expression"])),
+                raw.execute(
+                    f"""
+                    SELECT
+                      source,
+                      location_id,
+                      ? AS metric,
+                      year,
+                      month,
+                      hour_local,
+                      COUNT({info["expression"]}) AS count,
+                      AVG({info["expression"]}) AS mean,
+                      MIN({info["expression"]}) AS min,
+                      MAX({info["expression"]}) AS max
+                    FROM observations
+                    WHERE valid = 1
+                      AND {info["expression"]} IS NOT NULL
+                    GROUP BY source, location_id, year, month, hour_local
+                    """,
+                    (metric,),
+                ).fetchall(),
             )
         processed.commit()
 
@@ -197,53 +214,3 @@ def _estimate_table_sizes(path: Path) -> list[tuple[str, int]]:
             """
         ).fetchall()
     return [(str(row[0]), int(row[1])) for row in rows]
-
-
-def _aggregate_metric(
-    conn: sqlite3.Connection, metric: str, expression: str
-) -> Iterable[tuple]:
-    groups: dict[tuple[str, str, int, int, int], list[float]] = defaultdict(list)
-    for row in conn.execute(
-        f"""
-        SELECT source, location_id, year, month, hour_local, {expression} AS value
-        FROM observations
-        WHERE valid = 1
-          AND {expression} IS NOT NULL
-        """
-    ):
-        groups[
-            (
-                str(row["source"]),
-                str(row["location_id"]),
-                int(row["year"]),
-                int(row["month"]),
-                int(row["hour_local"]),
-            )
-        ].append(float(row["value"]))
-
-    for key, values in groups.items():
-        source, location_id, year, month, hour_local = key
-        yield (
-            source,
-            location_id,
-            metric,
-            year,
-            month,
-            hour_local,
-            len(values),
-            sum(values) / len(values),
-            min(values),
-            max(values),
-            _percentile(values, 95.0),
-        )
-
-
-def _percentile(values: list[float], percentile: float) -> float:
-    sorted_values = sorted(values)
-    if len(sorted_values) == 1:
-        return sorted_values[0]
-    rank = (percentile / 100.0) * (len(sorted_values) - 1)
-    lower = int(rank)
-    upper = min(lower + 1, len(sorted_values) - 1)
-    fraction = rank - lower
-    return sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction
