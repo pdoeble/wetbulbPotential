@@ -20,7 +20,23 @@ CREATE TABLE IF NOT EXISTS locations (
   timezone TEXT NOT NULL,
   dwd_station_id TEXT,
   noaa_station_id TEXT,
-  nasa_enabled INTEGER NOT NULL DEFAULT 0
+  nasa_enabled INTEGER NOT NULL DEFAULT 0,
+  site_id TEXT,
+  site_type TEXT,
+  region TEXT,
+  climate_tags TEXT,
+  priority INTEGER,
+  primary_source TEXT,
+  secondary_source TEXT,
+  primary_access_url TEXT,
+  station_candidate_name TEXT,
+  station_candidate_id TEXT,
+  station_candidate_distance_km REAL,
+  wetbulb_method TEXT,
+  data_start TEXT,
+  data_end TEXT,
+  availability_score REAL,
+  notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS import_batches (
@@ -46,6 +62,7 @@ CREATE TABLE IF NOT EXISTS observations (
   relative_humidity_pct REAL,
   pressure_hpa REAL,
   wind_speed_ms REAL,
+  solar_radiation_w_m2 REAL,
   quality_code TEXT,
   valid INTEGER NOT NULL,
   raw_payload TEXT,
@@ -72,7 +89,23 @@ CREATE TABLE locations (
   timezone TEXT NOT NULL,
   dwd_station_id TEXT,
   noaa_station_id TEXT,
-  nasa_enabled INTEGER NOT NULL DEFAULT 0
+  nasa_enabled INTEGER NOT NULL DEFAULT 0,
+  site_id TEXT,
+  site_type TEXT,
+  region TEXT,
+  climate_tags TEXT,
+  priority INTEGER,
+  primary_source TEXT,
+  secondary_source TEXT,
+  primary_access_url TEXT,
+  station_candidate_name TEXT,
+  station_candidate_id TEXT,
+  station_candidate_distance_km REAL,
+  wetbulb_method TEXT,
+  data_start TEXT,
+  data_end TEXT,
+  availability_score REAL,
+  notes TEXT
 );
 
 CREATE TABLE aggregates (
@@ -86,12 +119,36 @@ CREATE TABLE aggregates (
   mean REAL NOT NULL,
   min REAL NOT NULL,
   max REAL NOT NULL,
+  p95 REAL NOT NULL,
   PRIMARY KEY (source, location_id, metric, year, month, hour_local)
 );
 
 CREATE INDEX idx_aggregates_filter
 ON aggregates (source, location_id, metric, year);
 """
+
+LOCATION_EXTRA_COLUMNS = {
+    "site_id": "TEXT",
+    "site_type": "TEXT",
+    "region": "TEXT",
+    "climate_tags": "TEXT",
+    "priority": "INTEGER",
+    "primary_source": "TEXT",
+    "secondary_source": "TEXT",
+    "primary_access_url": "TEXT",
+    "station_candidate_name": "TEXT",
+    "station_candidate_id": "TEXT",
+    "station_candidate_distance_km": "REAL",
+    "wetbulb_method": "TEXT",
+    "data_start": "TEXT",
+    "data_end": "TEXT",
+    "availability_score": "REAL",
+    "notes": "TEXT",
+}
+
+OBSERVATION_EXTRA_COLUMNS = {
+    "solar_radiation_w_m2": "REAL",
+}
 
 
 def connect(path: str | Path) -> sqlite3.Connection:
@@ -105,6 +162,8 @@ def connect(path: str | Path) -> sqlite3.Connection:
 def init_raw_db(path: str | Path) -> None:
     with connect(path) as conn:
         conn.executescript(RAW_SCHEMA)
+        _ensure_columns(conn, "locations", LOCATION_EXTRA_COLUMNS)
+        _ensure_columns(conn, "observations", OBSERVATION_EXTRA_COLUMNS)
 
 
 def upsert_locations(conn: sqlite3.Connection, locations: Iterable[Location]) -> None:
@@ -112,9 +171,12 @@ def upsert_locations(conn: sqlite3.Connection, locations: Iterable[Location]) ->
         """
         INSERT INTO locations (
           id, name, country, climate_label, latitude, longitude, elevation_m, timezone,
-          dwd_station_id, noaa_station_id, nasa_enabled
+          dwd_station_id, noaa_station_id, nasa_enabled, site_id, site_type, region,
+          climate_tags, priority, primary_source, secondary_source, primary_access_url,
+          station_candidate_name, station_candidate_id, station_candidate_distance_km,
+          wetbulb_method, data_start, data_end, availability_score, notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           name = excluded.name,
           country = excluded.country,
@@ -125,7 +187,23 @@ def upsert_locations(conn: sqlite3.Connection, locations: Iterable[Location]) ->
           timezone = excluded.timezone,
           dwd_station_id = excluded.dwd_station_id,
           noaa_station_id = excluded.noaa_station_id,
-          nasa_enabled = excluded.nasa_enabled
+          nasa_enabled = excluded.nasa_enabled,
+          site_id = excluded.site_id,
+          site_type = excluded.site_type,
+          region = excluded.region,
+          climate_tags = excluded.climate_tags,
+          priority = excluded.priority,
+          primary_source = excluded.primary_source,
+          secondary_source = excluded.secondary_source,
+          primary_access_url = excluded.primary_access_url,
+          station_candidate_name = excluded.station_candidate_name,
+          station_candidate_id = excluded.station_candidate_id,
+          station_candidate_distance_km = excluded.station_candidate_distance_km,
+          wetbulb_method = excluded.wetbulb_method,
+          data_start = excluded.data_start,
+          data_end = excluded.data_end,
+          availability_score = excluded.availability_score,
+          notes = excluded.notes
         """,
         [
             (
@@ -140,6 +218,22 @@ def upsert_locations(conn: sqlite3.Connection, locations: Iterable[Location]) ->
                 location.dwd_station_id,
                 location.noaa_station_id,
                 int(location.nasa_enabled),
+                location.site_id,
+                location.site_type,
+                location.region,
+                ",".join(location.climate_tags),
+                location.priority,
+                location.primary_source,
+                location.secondary_source,
+                location.primary_access_url,
+                location.station_candidate_name,
+                location.station_candidate_id,
+                location.station_candidate_distance_km,
+                location.wetbulb_method,
+                location.data_start,
+                location.data_end,
+                location.availability_score,
+                location.notes,
             )
             for location in locations
         ],
@@ -177,6 +271,7 @@ def upsert_observations(
             obs.relative_humidity_pct,
             obs.pressure_hpa,
             obs.wind_speed_ms,
+            obs.solar_radiation_w_m2,
             obs.quality_code,
             int(obs.valid),
             obs.raw_payload,
@@ -189,9 +284,10 @@ def upsert_observations(
         INSERT INTO observations (
           source, location_id, timestamp_utc, timestamp_local, year, month, hour_local,
           dry_bulb_c, wet_bulb_c, dew_point_c, relative_humidity_pct, pressure_hpa,
-          wind_speed_ms, quality_code, valid, raw_payload, import_batch_id
+          wind_speed_ms, solar_radiation_w_m2, quality_code, valid, raw_payload,
+          import_batch_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(source, location_id, timestamp_utc) DO UPDATE SET
           timestamp_local = excluded.timestamp_local,
           year = excluded.year,
@@ -203,6 +299,7 @@ def upsert_observations(
           relative_humidity_pct = excluded.relative_humidity_pct,
           pressure_hpa = excluded.pressure_hpa,
           wind_speed_ms = excluded.wind_speed_ms,
+          solar_radiation_w_m2 = excluded.solar_radiation_w_m2,
           quality_code = excluded.quality_code,
           valid = excluded.valid,
           raw_payload = excluded.raw_payload,
@@ -212,3 +309,11 @@ def upsert_observations(
     )
     return len(rows)
 
+
+def _ensure_columns(
+    conn: sqlite3.Connection, table_name: str, columns: dict[str, str]
+) -> None:
+    existing = {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table_name})")}
+    for column_name, column_type in columns.items():
+        if column_name not in existing:
+            conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")

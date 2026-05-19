@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 
-from .database import PROCESSED_SCHEMA, connect
+from .database import PROCESSED_SCHEMA, connect, init_raw_db
 
 METRICS = {
     "delta_t_k": {
@@ -33,7 +35,42 @@ METRICS = {
         "unit": "hPa",
         "expression": "pressure_hpa",
     },
+    "solar_radiation_w_m2": {
+        "label": "Solar radiation",
+        "unit": "W/m2",
+        "expression": "solar_radiation_w_m2",
+    },
 }
+
+LOCATION_COLUMNS = [
+    "id",
+    "name",
+    "country",
+    "climate_label",
+    "latitude",
+    "longitude",
+    "elevation_m",
+    "timezone",
+    "dwd_station_id",
+    "noaa_station_id",
+    "nasa_enabled",
+    "site_id",
+    "site_type",
+    "region",
+    "climate_tags",
+    "priority",
+    "primary_source",
+    "secondary_source",
+    "primary_access_url",
+    "station_candidate_name",
+    "station_candidate_id",
+    "station_candidate_distance_km",
+    "wetbulb_method",
+    "data_start",
+    "data_end",
+    "availability_score",
+    "notes",
+]
 
 
 def export_processed(
@@ -47,55 +84,32 @@ def export_processed(
     if processed_path.exists():
         processed_path.unlink()
 
+    init_raw_db(raw_db)
     with connect(raw_db) as raw, sqlite3.connect(processed_path) as processed:
         processed.row_factory = sqlite3.Row
         processed.executescript(PROCESSED_SCHEMA)
+        location_columns = ", ".join(LOCATION_COLUMNS)
+        location_placeholders = ", ".join("?" for _ in LOCATION_COLUMNS)
         processed.executemany(
-            """
-            INSERT INTO locations (
-              id, name, country, climate_label, latitude, longitude, elevation_m,
-              timezone, dwd_station_id, noaa_station_id, nasa_enabled
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            f"INSERT INTO locations ({location_columns}) VALUES ({location_placeholders})",
             raw.execute(
-                """
-                SELECT id, name, country, climate_label, latitude, longitude, elevation_m,
-                       timezone, dwd_station_id, noaa_station_id, nasa_enabled
+                f"""
+                SELECT {location_columns}
                 FROM locations
                 WHERE id IN (SELECT DISTINCT location_id FROM observations WHERE valid = 1)
                 """
             ).fetchall(),
         )
         for metric, info in METRICS.items():
-            expression = info["expression"]
             processed.executemany(
                 """
                 INSERT INTO aggregates (
-                  source, location_id, metric, year, month, hour_local, count, mean, min, max
+                  source, location_id, metric, year, month, hour_local, count,
+                  mean, min, max, p95
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                raw.execute(
-                    f"""
-                    SELECT
-                      source,
-                      location_id,
-                      ? AS metric,
-                      year,
-                      month,
-                      hour_local,
-                      COUNT({expression}) AS count,
-                      AVG({expression}) AS mean,
-                      MIN({expression}) AS min,
-                      MAX({expression}) AS max
-                    FROM observations
-                    WHERE valid = 1
-                      AND {expression} IS NOT NULL
-                    GROUP BY source, location_id, year, month, hour_local
-                    """,
-                    (metric,),
-                ).fetchall(),
+                _aggregate_metric(raw, metric, str(info["expression"])),
             )
         processed.commit()
 
@@ -184,3 +198,52 @@ def _estimate_table_sizes(path: Path) -> list[tuple[str, int]]:
         ).fetchall()
     return [(str(row[0]), int(row[1])) for row in rows]
 
+
+def _aggregate_metric(
+    conn: sqlite3.Connection, metric: str, expression: str
+) -> Iterable[tuple]:
+    groups: dict[tuple[str, str, int, int, int], list[float]] = defaultdict(list)
+    for row in conn.execute(
+        f"""
+        SELECT source, location_id, year, month, hour_local, {expression} AS value
+        FROM observations
+        WHERE valid = 1
+          AND {expression} IS NOT NULL
+        """
+    ):
+        groups[
+            (
+                str(row["source"]),
+                str(row["location_id"]),
+                int(row["year"]),
+                int(row["month"]),
+                int(row["hour_local"]),
+            )
+        ].append(float(row["value"]))
+
+    for key, values in groups.items():
+        source, location_id, year, month, hour_local = key
+        yield (
+            source,
+            location_id,
+            metric,
+            year,
+            month,
+            hour_local,
+            len(values),
+            sum(values) / len(values),
+            min(values),
+            max(values),
+            _percentile(values, 95.0),
+        )
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    sorted_values = sorted(values)
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    rank = (percentile / 100.0) * (len(sorted_values) - 1)
+    lower = int(rank)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    fraction = rank - lower
+    return sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction

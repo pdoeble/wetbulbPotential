@@ -408,3 +408,591 @@ locations:
       station_id: "94326099999"
     nasa:
       enabled: true
+
+  - id: DE_AFFALTERBACH_ROAD
+    site_id: DE_AFFALTERBACH_ROAD
+    site_name: Affalterbach
+    name: Affalterbach
+    site_type: Road
+    country: DE
+    region: Stuttgart Region
+    climate_label: Stuttgart-region road development climate
+    climate_tags: [road, development, central_europe, hot_summer]
+    latitude: 48.92
+    longitude: 9.32
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Stuttgart-region road development climate
+    nasa:
+      enabled: true
+
+  - id: DE_IMMENDINGEN_TRACK
+    site_id: DE_IMMENDINGEN_TRACK
+    site_name: Immendingen
+    name: Immendingen
+    site_type: Track
+    country: DE
+    region: Baden-Wuerttemberg
+    climate_label: Test center highland southern Germany
+    climate_tags: [track, proving_ground, central_europe, highland]
+    latitude: 47.93
+    longitude: 8.73
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Test center / highland southern Germany
+    nasa:
+      enabled: true
+
+  - id: DE_NUERBURGRING_TRACK
+    site_id: DE_NUERBURGRING_TRACK
+    site_name: Nuerburgring
+    name: Nuerburgring
+    site_type: Track
+    country: DE
+    region: Eifel
+    climate_label: Eifel altitude and variable weather
+    climate_tags: [track, altitude, variable_weather, central_europe]
+    latitude: 50.34
+    longitude: 6.95
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Eifel altitude and variable weather
+    nasa:
+      enabled: true
+
+  - id: DE_HOCKENHEIM_TRACK
+    site_id: DE_HOCKENHEIM_TRACK
+    site_name: Hockenheim
+    name: Hockenheim
+    site_type: Track
+    country: DE
+    region: Rhein-Neckar
+    climate_label: Upper Rhine hot-summer track
+    climate_tags: [track, hot_summer, upper_rhine, central_europe]
+    latitude: 49.33
+    longitude: 8.57
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Upper Rhine hot-summer track
+    nasa:
+      enabled: true
+
+  - id: US_NAPA_ROAD
+    site_id: US_NAPA_ROAD
+    site_name: Napa Valley
+    name: Napa Valley
+    site_type: Road
+    country: US
+    region: California
+    climate_label: California road hot dry validation
+    climate_tags: [road, hot_dry, california, summer_validation]
+    latitude: 38.30
+    longitude: -122.29
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: America/Los_Angeles
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: California road hot/dry validation
+    nasa:
+      enabled: true
+
+  - id: US_SONOMA_TRACK
+    site_id: US_SONOMA_TRACK
+    site_name: Sonoma Raceway
+    name: Sonoma Raceway
+    site_type: Track
+    country: US
+    region: California
+    climate_label: California track coastal inland mixed climate
+    climate_tags: [track, hot_dry, california, coastal_inland]
+    latitude: 38.16
+    longitude: -122.45
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: America/Los_Angeles
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: California track, coastal/inland mixed climate
+    nasa:
+      enabled: true
+
+  - id: IT_BARBERINO_ROAD
+    site_id: IT_BARBERINO_ROAD
+    site_name: Barberino Tavarnelle
+    name: Barberino Tavarnelle
+    site_type: Road
+    country: IT
+    region: Tuscany
+    climate_label: Tuscany summer road profile
+    climate_tags: [road, hot_summer, mediterranean, tuscany]
+    latitude: 43.55
+    longitude: 11.17
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Rome
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Tuscany summer road profile
+    nasa:
+      enabled: true
+
+  - id: US_COTA_TRACK
+    site_id: US_COTA_TRACK
+    site_name: Circuit of The Americas
+    name: Circuit of The Americas
+    site_type: Track
+    country: US
+    region: Texas
+    climate_label: Texas hot climate track
+    climate_tags: [track, hot, hot_humid, texas, ac_load]
+    latitude: 30.13
+    longitude: -97.64
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: America/Chicago
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Texas hot climate track
+    nasa:
+      enabled: true
+
+  - id: US_ROAD_ATLANTA_TRACK
+    site_id: US_ROAD_ATLANTA_TRACK
+    site_name: Road Atlanta
+    name: Road Atlanta
+    site_type: Track
+    country: US
+    region: Georgia
+    climate_label: Southeast US hot humid track
+    climate_tags: [track, hot_humid, southeast_us, ac_load]
+    latitude: 34.15
+    longitude: -83.82
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: America/New_York
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Southeast US hot-humid track
+    nasa:
+      enabled: true
+
+  - id: HR_SIBENIK_ROAD
+    site_id: HR_SIBENIK_ROAD
+    site_name: Sibenik
+    name: Sibenik
+    site_type: Road
+    country: HR
+    region: Dalmatia
+    climate_label: Mediterranean hot coastal humidity
+    climate_tags: [road, mediterranean, hot_humid, coastal]
+    latitude: 43.74
+    longitude: 15.90
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Zagreb
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Mediterranean hot/coastal humidity
+    nasa:
+      enabled: true
+
+  - id: AT_ST_NIKOLAI_ROAD
+    site_id: AT_ST_NIKOLAI_ROAD
+    site_name: St Nikolai im Sausal
+    name: St Nikolai im Sausal
+    site_type: Road
+    country: AT
+    region: South Styria
+    climate_label: South Austrian hilly road climate
+    climate_tags: [road, hilly, central_europe, hot_summer]
+    latitude: 46.82
+    longitude: 15.45
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Vienna
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: South Austrian hilly road climate
+    nasa:
+      enabled: true
+
+  - id: SE_SORSELE_TRACK
+    site_id: SE_SORSELE_TRACK
+    site_name: Sorsele
+    name: Sorsele
+    site_type: Track
+    country: SE
+    region: Vaesterbotten
+    climate_label: Cold winter test climate
+    climate_tags: [track, winter, cold, nordic]
+    latitude: 65.53
+    longitude: 17.54
+    elevation_m: null
+    priority: 3
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Stockholm
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Cold/winter test climate
+    nasa:
+      enabled: true
+
+  - id: DE_LUENEBURG_TRACK
+    site_id: DE_LUENEBURG_TRACK
+    site_name: Lueneburg
+    name: Lueneburg
+    site_type: Track
+    country: DE
+    region: Lower Saxony
+    climate_label: North German track road climate
+    climate_tags: [track, road, north_germany, central_europe]
+    latitude: 53.25
+    longitude: 10.41
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: North German track/road climate
+    nasa:
+      enabled: true
+
+  - id: DE_BILSTER_BERG_TRACK
+    site_id: DE_BILSTER_BERG_TRACK
+    site_name: Bilster Berg
+    name: Bilster Berg
+    site_type: Track
+    country: DE
+    region: North Rhine-Westphalia
+    climate_label: Central German hilly track
+    climate_tags: [track, hilly, central_europe, altitude]
+    latitude: 51.79
+    longitude: 9.07
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Central German hilly track
+    nasa:
+      enabled: true
+
+  - id: DE_GROSS_DOELLN_TRACK
+    site_id: DE_GROSS_DOELLN_TRACK
+    site_name: Gross Doelln
+    name: Gross Doelln
+    site_type: Track
+    country: DE
+    region: Brandenburg
+    climate_label: Northeast German proving ground
+    climate_tags: [track, proving_ground, north_east_germany, central_europe]
+    latitude: 53.03
+    longitude: 13.55
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Northeast German proving ground
+    nasa:
+      enabled: true
+
+  - id: DE_SACHSENRING_TRACK
+    site_id: DE_SACHSENRING_TRACK
+    site_name: Sachsenring
+    name: Sachsenring
+    site_type: Track
+    country: DE
+    region: Saxony
+    climate_label: East German track climate
+    climate_tags: [track, east_germany, central_europe]
+    latitude: 50.79
+    longitude: 12.69
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: East German track climate
+    nasa:
+      enabled: true
+
+  - id: DE_LEIPHEIM_TRACK
+    site_id: DE_LEIPHEIM_TRACK
+    site_name: Leipheim
+    name: Leipheim
+    site_type: Track
+    country: DE
+    region: Bavaria
+    climate_label: Southern German former airfield test climate
+    climate_tags: [track, former_airfield, south_germany, central_europe]
+    latitude: 48.44
+    longitude: 10.22
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: DWD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Berlin
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Southern German former airfield/test climate
+    nasa:
+      enabled: true
+
+  - id: AT_SAALFELDEN_TRACK
+    site_id: AT_SAALFELDEN_TRACK
+    site_name: Saalfelden_unconfirmed
+    name: Saalfelden_unconfirmed
+    site_type: Track
+    country: AT
+    region: Salzburg
+    climate_label: Unconfirmed Austrian alpine road track profile
+    climate_tags: [track, alpine, winter, unresolved]
+    latitude: 47.43
+    longitude: 12.85
+    elevation_m: null
+    priority: 3
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Vienna
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: "Unresolved: user wrote Saalfelder Österreich; treated provisionally as Saalfelden am Steinernen Meer coordinates."
+    nasa:
+      enabled: true
+
+  - id: SE_ARJEPLOG_TRACK
+    site_id: SE_ARJEPLOG_TRACK
+    site_name: Arjeplog
+    name: Arjeplog
+    site_type: Track
+    country: SE
+    region: Norrbotten
+    climate_label: Cold winter test climate
+    climate_tags: [track, winter, cold, nordic]
+    latitude: 66.05
+    longitude: 17.89
+    elevation_m: null
+    priority: 3
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Stockholm
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Cold/winter test climate
+    nasa:
+      enabled: true
+
+  - id: BE_SPA_TRACK
+    site_id: BE_SPA_TRACK
+    site_name: Spa-Francorchamps
+    name: Spa-Francorchamps
+    site_type: Track
+    country: BE
+    region: Wallonia
+    climate_label: Altitude rain variable track weather
+    climate_tags: [track, altitude, rain, variable_weather]
+    latitude: 50.44
+    longitude: 5.97
+    elevation_m: null
+    priority: 2
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Brussels
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Altitude, rain, variable track weather
+    nasa:
+      enabled: true
+
+  - id: IT_MONZA_TRACK
+    site_id: IT_MONZA_TRACK
+    site_name: Monza
+    name: Monza
+    site_type: Track
+    country: IT
+    region: Lombardy
+    climate_label: Po Valley hot humid summer track
+    climate_tags: [track, hot_humid, po_valley, summer_validation]
+    latitude: 45.62
+    longitude: 9.28
+    elevation_m: null
+    priority: 1
+    primary_source: NASA_POWER_HOURLY_POINT
+    secondary_source: NOAA_ISD
+    primary_access_url: null
+    station_candidate_name: null
+    station_candidate_id: null
+    station_candidate_distance_km: null
+    wetbulb_method: direct
+    timezone: Europe/Rome
+    data_start: "2002-01-01"
+    data_end: "2013-12-31"
+    availability_score: null
+    notes: Po Valley hot/humid summer track
+    nasa:
+      enabled: true

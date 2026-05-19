@@ -48,9 +48,9 @@ def test_nasa_parser_skips_header_and_handles_missing_values(tmp_path: Path) -> 
                 "-BEGIN HEADER-",
                 "NASA/POWER Source Native Resolution Hourly Data",
                 "-END HEADER-",
-                "YEAR,MO,DY,HR,T2M,T2MWET,T2MDEW,RH2M,PS,WS10M",
-                "2024,1,1,0,7.38,4.65,1.92,68.16,96.11,2.71",
-                "2024,1,1,1,-999,4.34,1.60,68.04,96.09,2.88",
+                "YEAR,MO,DY,HR,T2M,T2MWET,T2MDEW,RH2M,PS,WS10M,ALLSKY_SFC_SW_DWN",
+                "2024,1,1,0,7.38,4.65,1.92,68.16,96.11,2.71,153.4",
+                "2024,1,1,1,-999,4.34,1.60,68.04,96.09,2.88,-999",
             ]
         ),
         encoding="utf-8",
@@ -62,6 +62,8 @@ def test_nasa_parser_skips_header_and_handles_missing_values(tmp_path: Path) -> 
     assert len(observations) == 2
     assert observations[0].source == "NASA_POWER"
     assert observations[0].pressure_hpa == 961.1
+    assert observations[0].solar_radiation_w_m2 == 153.4
     assert observations[0].valid is True
     assert observations[1].dry_bulb_c is None
+    assert observations[1].solar_radiation_w_m2 is None
     assert observations[1].valid is False

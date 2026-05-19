@@ -72,6 +72,7 @@ def read_observations(path: str | Path, location: Location) -> list[Observation]
                     relative_humidity_pct=rh,
                     pressure_hpa=pressure,
                     wind_speed_ms=None,
+                    solar_radiation_w_m2=None,
                     quality_code=cleaned.get("QN_8"),
                     valid=valid,
                     raw_payload=json.dumps(
@@ -81,4 +82,3 @@ def read_observations(path: str | Path, location: Location) -> list[Observation]
                 )
             )
     return observations
-

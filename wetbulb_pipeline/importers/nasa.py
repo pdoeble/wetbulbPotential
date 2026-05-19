@@ -12,7 +12,29 @@ from wetbulb_pipeline.models import Location, Observation
 
 SOURCE = "NASA_POWER"
 BASE_URL = "https://power.larc.nasa.gov/api/temporal/hourly/point"
-PARAMETERS = "T2M,T2MWET,T2MDEW,RH2M,PS,WS10M"
+PARAMETERS = "T2M,T2MWET,T2MDEW,RH2M,PS,WS10M,ALLSKY_SFC_SW_DWN"
+
+
+def build_power_url(
+    latitude: float,
+    longitude: float,
+    start: str = "20020101",
+    end: str = "20131231",
+    time_standard: str = "UTC",
+) -> str:
+    query = urlencode(
+        {
+            "parameters": PARAMETERS,
+            "community": "SB",
+            "longitude": longitude,
+            "latitude": latitude,
+            "start": start,
+            "end": end,
+            "format": "CSV",
+            "time-standard": time_standard,
+        }
+    )
+    return f"{BASE_URL}?{query}"
 
 
 def download_range(
@@ -27,19 +49,10 @@ def download_range(
     target = destination / f"{location.id}_{start}_{end}_{time_standard}.csv"
     if target.exists() and target.stat().st_size > 0:
         return target
-    query = urlencode(
-        {
-            "parameters": PARAMETERS,
-            "community": "SB",
-            "longitude": location.longitude,
-            "latitude": location.latitude,
-            "start": start,
-            "end": end,
-            "format": "CSV",
-            "time-standard": time_standard,
-        }
+    urlretrieve(
+        build_power_url(location.latitude, location.longitude, start, end, time_standard),
+        target,
     )
-    urlretrieve(f"{BASE_URL}?{query}", target)
     return target
 
 
@@ -84,6 +97,7 @@ def read_observations(
         pressure_kpa = _parse_float(row.get("PS"))
         pressure_hpa = pressure_kpa * 10.0 if pressure_kpa is not None else None
         wind = _parse_float(row.get("WS10M"))
+        solar = _parse_float(row.get("ALLSKY_SFC_SW_DWN"))
         observations.append(
             Observation(
                 source=SOURCE,
@@ -99,10 +113,10 @@ def read_observations(
                 relative_humidity_pct=rh,
                 pressure_hpa=pressure_hpa,
                 wind_speed_ms=wind,
+                solar_radiation_w_m2=solar,
                 quality_code=time_standard.upper(),
                 valid=dry is not None and wet is not None,
                 raw_payload=json.dumps({"source": "NASA POWER"}, separators=(",", ":")),
             )
         )
     return observations
-

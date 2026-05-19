@@ -43,5 +43,8 @@ def test_import_is_idempotent_and_export_writes_manifest(tmp_path: Path) -> None
 
     with sqlite3.connect(processed_db) as conn:
         aggregate_count = conn.execute("SELECT COUNT(*) FROM aggregates").fetchone()[0]
+        columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(aggregates)").fetchall()
+        }
     assert aggregate_count > 0
-
+    assert "p95" in columns
