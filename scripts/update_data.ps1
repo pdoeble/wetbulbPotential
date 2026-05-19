@@ -5,6 +5,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Incremental update wrapper: checks source/location/year coverage and downloads only missing data.
 $argsList = @(
   "-m", "wetbulb_pipeline",
   "update",
@@ -17,4 +19,3 @@ if ($DryRun) {
 }
 
 python @argsList
-

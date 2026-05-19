@@ -61,6 +61,24 @@ Die Daten werden als Stundenkurven ausgewertet:
 | Wet bulb temperature | Feuchtkugeltemperatur | degC |
 | Relative humidity | Relative Feuchte | % |
 | Pressure | Luftdruck | hPa |
+| Solar radiation | Kurzwellige Einstrahlung aus NASA POWER | W/m2 |
+
+## Standortkatalog
+
+Der Katalog enthaelt DWD/NOAA-Stationsstandorte und zusaetzliche Track-/Road-Testorte fuer
+PKW-Kuehlsystemauslegung. Fuer die Track-/Road-Orte ist NASA POWER die primaere Quelle, damit fuer
+jeden Punkt sofort eine 12 x 24 Auswertung nach Monat und lokaler Uhrzeit erzeugt werden kann.
+
+Neu enthalten sind u. a.:
+
+- Affalterbach, Immendingen, Nuerburgring, Hockenheim, Bilster Berg, Sachsenring, Gross Doelln,
+  Leipheim und Lueneburg
+- Napa Valley, Sonoma Raceway, Circuit of The Americas und Road Atlanta
+- Monza, Barberino Tavarnelle, Sibenik, Spa-Francorchamps, St Nikolai im Sausal
+- Sorsele und Arjeplog fuer Winter-/Kaltklima
+
+`Saalfelden_unconfirmed` ist bewusst als ungeklaert markiert, weil der Ausgangsort als
+`Saalfelder Österreich` notiert war.
 
 ## Datenquellen
 
@@ -115,9 +133,33 @@ Genutzte NASA-Parameter:
 - `RH2M`: relative Feuchte
 - `PS`: Oberflaechendruck
 - `WS10M`: Windgeschwindigkeit
+- `ALLSKY_SFC_SW_DWN`: kurzwellige Solarstrahlung
 
 NASA POWER ist kein lokales Stationsmessnetz, sondern ein globales Punkt-/Rasterprodukt. Es ist
 nuetzlich als Fallback, wenn fuer einen Standort keine passende Stationsreihe verfuegbar ist.
+
+## Daten Laden Und Aktualisieren
+
+Vor jedem echten Lauf empfiehlt sich ein Dry-run. Er zeigt, welche Dateien fehlen und welche Jahre
+bereits in der lokalen RAW-Datenbank vorhanden sind.
+
+Initialer Fill-run fuer alle konfigurierten Quellen und Standorte:
+
+```powershell
+.\scripts\download_all_data.ps1 -DryRun
+.\scripts\download_all_data.ps1
+```
+
+Inkrementelles Update:
+
+```powershell
+.\scripts\update_data.ps1 -DryRun
+.\scripts\update_data.ps1
+```
+
+Fuer neu hinzugefuegte Standorte reicht normalerweise das inkrementelle Update. Die Pipeline prueft
+pro Quelle, Standort und Jahr, was schon vorhanden ist, und laedt nur fehlende Jahresdateien nach.
+Der Fill-run ist die passende Wahl fuer eine leere Maschine oder eine neu angelegte RAW-Datenbank.
 
 ## Hinweise Zur Interpretation
 

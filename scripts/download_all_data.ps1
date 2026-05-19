@@ -5,6 +5,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Fill-run wrapper: runs all configured sources and locations.
+# The Python updater is still incremental and skips years already present in the RAW DB.
 $argsList = @(
   "-m", "wetbulb_pipeline",
   "update",
@@ -17,4 +20,3 @@ if ($DryRun) {
 }
 
 python @argsList
-
