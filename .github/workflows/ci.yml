@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: web
+        run: npm run build
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: wetbulb-potential
+          auto-activate-base: false
+
+      - name: Test Python pipeline
+        shell: bash -el {0}
+        run: pytest
+
+      - name: Check processed DB size
+        shell: bash
+        run: |
+          test -f web/public/data/wetbulb_processed.sqlite
+          size=$(stat -c%s web/public/data/wetbulb_processed.sqlite)
+          test "$size" -lt 104857600
+
