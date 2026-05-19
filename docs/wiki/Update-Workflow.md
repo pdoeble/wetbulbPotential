@@ -49,7 +49,8 @@ python -m wetbulb_pipeline update --sources noaa nasa
 - Fuer neu ergaenzte Standorte reicht deshalb ein Update-Lauf; vorhandene Jahre werden uebersprungen.
 - Der Fill-run ist semantisch fuer Erstbefuellung gedacht und ist bei vorhandener RAW-DB ebenfalls trafficoptimiert.
 - DWD wird fuer bekannte historische Dateien nur einmal importiert.
-- NOAA wird pro Standort und Jahr geprueft.
+- NOAA wird pro Standort und Jahr geprueft. Nicht vorhandene NOAA-Jahresdateien werden als
+  `.missing` markiert und brechen den Lauf nicht ab.
 - NASA POWER wird pro Standort und Jahr geprueft.
 - Der Export aktualisiert `web/public/data/wetbulb_processed.sqlite` und `manifest.json`.
 

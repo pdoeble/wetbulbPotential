@@ -160,6 +160,8 @@ Inkrementelles Update:
 Fuer neu hinzugefuegte Standorte reicht normalerweise das inkrementelle Update. Die Pipeline prueft
 pro Quelle, Standort und Jahr, was schon vorhanden ist, und laedt nur fehlende Jahresdateien nach.
 Der Fill-run ist die passende Wahl fuer eine leere Maschine oder eine neu angelegte RAW-Datenbank.
+Falls NOAA fuer eine Station/Jahr-Kombination kein CSV bereitstellt, wird dies als `.missing`
+vermerkt und der Lauf setzt mit den naechsten Daten fort.
 
 ## Hinweise Zur Interpretation
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.error import HTTPError
 
 from wetbulb_pipeline.config import get_location
+from wetbulb_pipeline.importers import noaa
 from wetbulb_pipeline.importers.nasa import read_observations as read_nasa
 from wetbulb_pipeline.importers.noaa import read_observations as read_noaa
 
@@ -67,3 +69,17 @@ def test_nasa_parser_skips_header_and_handles_missing_values(tmp_path: Path) -> 
     assert observations[1].dry_bulb_c is None
     assert observations[1].solar_radiation_w_m2 is None
     assert observations[1].valid is False
+
+
+def test_noaa_download_404_writes_missing_marker(tmp_path, monkeypatch) -> None:
+    def fail_404(url: str, target: Path) -> None:
+        raise HTTPError(url, 404, "Not Found", hdrs=None, fp=None)
+
+    monkeypatch.setattr(noaa, "urlretrieve", fail_404)
+
+    downloaded = noaa.download_year("00000099999", 2002, tmp_path)
+
+    assert downloaded is None
+    marker = tmp_path / "00000099999_2002.missing"
+    assert marker.exists()
+    assert "404 Not Found" in marker.read_text(encoding="utf-8")

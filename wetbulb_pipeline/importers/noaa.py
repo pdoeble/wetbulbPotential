@@ -4,6 +4,7 @@ import csv
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import urlretrieve
 from zoneinfo import ZoneInfo
 
@@ -18,13 +19,32 @@ SOURCE = "NOAA"
 BASE_URL = "https://www.ncei.noaa.gov/data/global-hourly/access"
 
 
-def download_year(station_id: str, year: int, destination_dir: str | Path) -> Path:
+def build_year_url(station_id: str, year: int) -> str:
+    return f"{BASE_URL}/{year}/{station_id}.csv"
+
+
+def missing_marker_path(station_id: str, year: int, destination_dir: str | Path) -> Path:
+    return Path(destination_dir) / f"{station_id}_{year}.missing"
+
+
+def download_year(station_id: str, year: int, destination_dir: str | Path) -> Path | None:
     destination = Path(destination_dir)
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / f"{station_id}_{year}.csv"
     if target.exists() and target.stat().st_size > 0:
         return target
-    urlretrieve(f"{BASE_URL}/{year}/{station_id}.csv", target)
+    marker = missing_marker_path(station_id, year, destination)
+    if marker.exists():
+        return None
+    url = build_year_url(station_id, year)
+    try:
+        urlretrieve(url, target)
+    except HTTPError as exc:
+        if exc.code == 404:
+            target.unlink(missing_ok=True)
+            marker.write_text(f"404 Not Found\n{url}\n", encoding="utf-8")
+            return None
+        raise
     return target
 
 

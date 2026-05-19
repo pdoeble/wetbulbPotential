@@ -108,11 +108,26 @@ def _sync_noaa(
             results.append(SyncResult("NOAA", location.id, str(year), 0, True))
             continue
         input_path = download_dir / f"{location.noaa_station_id}_{year}.csv"
+        missing_marker = noaa.missing_marker_path(location.noaa_station_id, year, download_dir)
+        if missing_marker.exists():
+            results.append(SyncResult("NOAA", location.id, f"missing:{missing_marker}", 0, True))
+            continue
         if dry_run:
             results.append(SyncResult("NOAA", location.id, str(input_path), 0, False))
             continue
         if not input_path.exists():
             input_path = noaa.download_year(location.noaa_station_id, year, download_dir)
+            if input_path is None:
+                results.append(
+                    SyncResult(
+                        "NOAA",
+                        location.id,
+                        f"missing:{noaa.build_year_url(location.noaa_station_id, year)}",
+                        0,
+                        True,
+                    )
+                )
+                continue
         observations = noaa.read_observations(input_path, location)
         imported = _store_observations(raw_db, "NOAA", location.id, str(input_path), observations)
         results.append(SyncResult("NOAA", location.id, str(input_path), imported, False))
