@@ -460,22 +460,66 @@ def _index_html() -> str:
           texttemplate: state.showValues ? '%{text}' : undefined,
           textfont: { size: Math.max(8, Number(state.tickFontSize) - 4), color: '#152033' }
         };
-        const contour = {
+        const filledContour = {
+          type: 'contour',
+          x: HOURS,
+          y: MONTHS,
+          z: matrix,
+          colorscale: COLORSCALE,
+          colorbar: { title: { text: metric.unit } },
+          contours: {
+            coloring: 'heatmap',
+            showlabels: Boolean(state.showContourLabels),
+            showlines: true
+          },
+          line: { color: '#111827', width: state.preset === 'sae' ? 1.1 : 0.9 },
+          showscale: true,
+          hovertemplate
+        };
+        const lineContour = {
           type: 'contour',
           x: HOURS,
           y: MONTHS,
           z: matrix,
           contours: {
-            coloring: state.plotType === 'combined' ? 'none' : 'none',
-            showlabels: Boolean(state.showContourLabels)
+            coloring: 'none',
+            showlabels: Boolean(state.showContourLabels),
+            showlines: true
           },
           line: { color: '#111827', width: state.preset === 'sae' ? 1.1 : 0.9 },
           showscale: false,
           hovertemplate
         };
         if (state.plotType === 'heatmap') return [heatmap];
-        if (state.plotType === 'contour') return [contour];
-        return [heatmap, contour];
+        if (state.plotType === 'contour') {
+          return state.showValues ? [lineContour, valueTextTrace(matrix)] : [lineContour];
+        }
+        return state.showValues ? [filledContour, valueTextTrace(matrix)] : [filledContour];
+      }
+
+      function valueTextTrace(matrix) {
+        const x = [];
+        const y = [];
+        const text = [];
+        for (let month = 0; month < matrix.length; month += 1) {
+          for (let hour = 0; hour < matrix[month].length; hour += 1) {
+            const value = matrix[month][hour];
+            if (value === null || value === undefined || Number.isNaN(value)) continue;
+            x.push(hour);
+            y.push(month + 1);
+            text.push(value.toFixed(2));
+          }
+        }
+        return {
+          type: 'scatter',
+          mode: 'text',
+          x,
+          y,
+          text,
+          textfont: { size: Math.max(8, Number(state.tickFontSize) - 4), color: '#152033' },
+          hoverinfo: 'skip',
+          showlegend: false
+        };
       }
 
       function layout() {

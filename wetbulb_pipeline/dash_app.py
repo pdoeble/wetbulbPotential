@@ -232,7 +232,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         int(settings["yearEnd"]),
     )
     fig = go.Figure()
-    if settings["plotType"] in {"heatmap", "combined"}:
+    if settings["plotType"] == "heatmap":
         fig.add_trace(
             go.Heatmap(
                 x=HOURS,
@@ -249,13 +249,43 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 textfont={"size": max(8, int(settings["tickFontSize"]) - 4)},
             )
         )
-    if settings["plotType"] in {"contour", "combined"}:
+    elif settings["plotType"] == "combined":
         fig.add_trace(
             go.Contour(
                 x=HOURS,
                 y=MONTHS,
                 z=matrix,
-                contours={"coloring": "none", "showlabels": settings["showContourLabels"]},
+                colorscale=COLORSCALE,
+                colorbar={"title": {"text": metric["unit"]}},
+                contours={
+                    "coloring": "heatmap",
+                    "showlabels": settings["showContourLabels"],
+                    "showlines": True,
+                },
+                line={
+                    "color": "#111827",
+                    "width": 1.1 if settings["preset"] == "sae" else 0.9,
+                },
+                showscale=True,
+                hovertemplate=(
+                    "Month %{y}<br>Hour %{x}:00<br>"
+                    f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
+                ),
+            )
+        )
+        if settings["showValues"]:
+            fig.add_trace(_cell_value_trace(matrix, settings))
+    else:
+        fig.add_trace(
+            go.Contour(
+                x=HOURS,
+                y=MONTHS,
+                z=matrix,
+                contours={
+                    "coloring": "none",
+                    "showlabels": settings["showContourLabels"],
+                    "showlines": True,
+                },
                 line={"color": "#111827", "width": 1.1 if settings["preset"] == "sae" else 0.9},
                 showscale=False,
                 hovertemplate=(
@@ -264,6 +294,8 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 ),
             )
         )
+        if settings["showValues"]:
+            fig.add_trace(_cell_value_trace(matrix, settings))
 
     fig.update_layout(
         width=int(settings["figureWidth"]),
@@ -325,6 +357,30 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
 
 def _cell_text(matrix: list[list[float | None]]) -> list[list[str]]:
     return [["" if value is None else f"{value:.2f}" for value in row] for row in matrix]
+
+
+def _cell_value_trace(matrix: list[list[float | None]], settings: dict[str, Any]):
+    import plotly.graph_objects as go
+
+    x_values: list[int] = []
+    y_values: list[int] = []
+    text_values: list[str] = []
+    for month_index, row in enumerate(matrix):
+        for hour, value in enumerate(row):
+            if value is None:
+                continue
+            x_values.append(hour)
+            y_values.append(month_index + 1)
+            text_values.append(f"{value:.2f}")
+    return go.Scatter(
+        x=x_values,
+        y=y_values,
+        text=text_values,
+        mode="text",
+        textfont={"size": max(8, int(settings["tickFontSize"]) - 4), "color": "#152033"},
+        hoverinfo="skip",
+        showlegend=False,
+    )
 
 
 def _metric(app_data: dict[str, Any], metric_id: str) -> dict[str, Any]:

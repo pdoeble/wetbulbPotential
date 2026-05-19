@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from wetbulb_pipeline.dash_app import build_dash_figure
 from wetbulb_pipeline.site import build_site
-from wetbulb_pipeline.visualization import build_matrix
+from wetbulb_pipeline.visualization import build_matrix, build_visualization_data
 
 
 def test_build_matrix_uses_weighted_mean_over_selected_years() -> None:
@@ -75,6 +76,8 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         {"id": "contour", "label": "Isolines"},
         {"id": "combined", "label": "Heatmap + isolines"},
     ]
+    assert "filledContour" in index
+    assert "coloring: 'heatmap'" in index
 
     for panel in ["Data", "Plot", "Figure & Export"]:
         assert panel in index
@@ -108,3 +111,13 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Export SVG",
     ]:
         assert control in index
+
+
+def test_default_combined_plot_uses_filled_contour_layer() -> None:
+    app_data = build_visualization_data("web/public/data")
+
+    figure = build_dash_figure(app_data, app_data["defaults"])
+
+    assert [trace.type for trace in figure.data] == ["contour"]
+    assert figure.data[0].contours.coloring == "heatmap"
+    assert figure.data[0].contours.showlines is True
