@@ -16,7 +16,8 @@ COLORSCALE = [
 
 
 def create_dash_app(data_dir: str = "web/public/data"):
-    from dash import Dash, Input, Output, dcc, html
+    from dash import Dash, Input, Output, State, dcc, html
+    from dash.exceptions import PreventUpdate
 
     app_data = build_visualization_data(data_dir)
     defaults = app_data["defaults"]
@@ -41,15 +42,51 @@ def create_dash_app(data_dir: str = "web/public/data"):
                 className="source-box",
                 style=_box_style(),
             ),
-            html.Aside(
-                _settings_layout(app_data),
-                className="settings",
+            html.Section(
+                [
+                    html.Aside(
+                        _settings_layout(app_data),
+                        className="settings",
+                        style={
+                            **_box_style(),
+                            "display": "grid",
+                            "gridTemplateColumns": "repeat(auto-fit, minmax(190px, 1fr))",
+                            "gap": "10px",
+                            "padding": "10px",
+                        },
+                    ),
+                    html.Section(
+                        [
+                            html.H2(
+                                "Locations",
+                                style={
+                                    "fontSize": "14px",
+                                    "margin": "0",
+                                    "padding": "10px 12px 0",
+                                },
+                            ),
+                            dcc.Graph(
+                                id="locationMap",
+                                config={"displayModeBar": False},
+                                style={"width": "100%", "height": "320px"},
+                            ),
+                        ],
+                        className="map-panel",
+                        style={
+                            **_box_style(),
+                            "height": "360px",
+                            "display": "grid",
+                            "gridTemplateRows": "auto minmax(0, 1fr)",
+                            "overflow": "hidden",
+                        },
+                    ),
+                ],
+                className="control-map-grid",
                 style={
-                    **_box_style(),
                     "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(230px, 1fr))",
-                    "gap": "10px",
-                    "padding": "10px",
+                    "gridTemplateColumns": "minmax(460px, 1fr) minmax(320px, 440px)",
+                    "gap": "14px",
+                    "alignItems": "start",
                 },
             ),
             html.Section(
@@ -92,6 +129,47 @@ def create_dash_app(data_dir: str = "web/public/data"):
             "minHeight": "100vh",
         },
     )
+
+    @app.callback(
+        Output("locationMap", "figure"),
+        [Input("source", "value"), Input("location", "value")],
+    )
+    def _update_location_map(source, location):
+        return build_location_map_figure(app_data, source, location)
+
+    @app.callback(
+        [
+            Output("source", "value"),
+            Output("location", "value"),
+            Output("metric", "value"),
+            Output("yearStart", "value"),
+            Output("yearEnd", "value"),
+        ],
+        Input("locationMap", "clickData"),
+        [State("source", "value"), State("metric", "value")],
+        prevent_initial_call=True,
+    )
+    def _select_location_from_map(click_data, current_source, current_metric):
+        if not click_data or not click_data.get("points"):
+            raise PreventUpdate
+        location_id = click_data["points"][0].get("customdata")
+        if not location_id:
+            raise PreventUpdate
+        availability = preferred_availability_for_location(
+            app_data,
+            location_id,
+            current_source,
+            current_metric,
+        )
+        if not availability:
+            raise PreventUpdate
+        return (
+            availability["source"],
+            availability["location_id"],
+            availability["metric"],
+            availability["year_min"],
+            availability["year_max"],
+        )
 
     @app.callback(
         Output("plot", "figure"),
@@ -353,6 +431,112 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         ],
     )
     return fig
+
+
+def build_location_map_figure(app_data: dict[str, Any], source: str, location_id: str):
+    import plotly.graph_objects as go
+
+    locations = app_data["locations"]
+    current_source_locations = {
+        item["location_id"] for item in app_data["availability"] if item["source"] == source
+    }
+    marker_colors = [
+        "#b3261e"
+        if item["id"] == location_id
+        else "#174ea6"
+        if item["id"] in current_source_locations
+        else "#8c98a9"
+        for item in locations
+    ]
+    marker_sizes = [12 if item["id"] == location_id else 7 for item in locations]
+    marker_opacity = [
+        1 if item["id"] == location_id or item["id"] in current_source_locations else 0.55
+        for item in locations
+    ]
+    fig = go.Figure(
+        go.Scattergeo(
+            mode="markers",
+            lat=[item["latitude"] for item in locations],
+            lon=[item["longitude"] for item in locations],
+            text=[_location_map_label(item) for item in locations],
+            customdata=[item["id"] for item in locations],
+            marker={
+                "size": marker_sizes,
+                "color": marker_colors,
+                "opacity": marker_opacity,
+                "line": {"color": "#ffffff", "width": 1},
+            },
+            hovertemplate="%{text}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        geo={
+            "scope": "world",
+            "projection": {"type": "natural earth"},
+            "showframe": False,
+            "showland": True,
+            "landcolor": "#edf2f7",
+            "showcountries": True,
+            "countrycolor": "#c7d0dd",
+            "showcoastlines": True,
+            "coastlinecolor": "#b9c4d3",
+            "showocean": True,
+            "oceancolor": "#ffffff",
+            "bgcolor": "#ffffff",
+        },
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+    )
+    return fig
+
+
+def preferred_availability_for_location(
+    app_data: dict[str, Any],
+    location_id: str,
+    source: str | None,
+    metric: str | None,
+) -> dict[str, Any] | None:
+    options = [item for item in app_data["availability"] if item["location_id"] == location_id]
+    return next(
+        (
+            item
+            for item in (
+                _find_availability(options, source, metric),
+                _find_availability(options, source, "delta_t_k"),
+                _find_availability(options, None, metric),
+                _find_availability(options, None, "delta_t_k"),
+                options[0] if options else None,
+            )
+            if item
+        ),
+        None,
+    )
+
+
+def _find_availability(
+    options: list[dict[str, Any]],
+    source: str | None,
+    metric: str | None,
+) -> dict[str, Any] | None:
+    return next(
+        (
+            item
+            for item in options
+            if (source is None or item["source"] == source)
+            and (metric is None or item["metric"] == metric)
+        ),
+        None,
+    )
+
+
+def _location_map_label(location: dict[str, Any]) -> str:
+    rows = [f"<strong>{location['name']}</strong>", location["country"]]
+    if location.get("climate_label"):
+        rows.append(location["climate_label"])
+    if location.get("elevation_m") is not None:
+        rows.append(f"{float(location['elevation_m']):.0f} m")
+    return "<br>".join(rows)
 
 
 def _cell_text(matrix: list[list[float | None]]) -> list[list[str]]:

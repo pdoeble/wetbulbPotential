@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from wetbulb_pipeline.dash_app import build_dash_figure
+from wetbulb_pipeline.dash_app import (
+    build_dash_figure,
+    build_location_map_figure,
+    preferred_availability_for_location,
+)
 from wetbulb_pipeline.site import build_site
 from wetbulb_pipeline.visualization import build_matrix, build_visualization_data
 
@@ -121,3 +125,53 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
     assert [trace.type for trace in figure.data] == ["contour"]
     assert figure.data[0].contours.coloring == "heatmap"
     assert figure.data[0].contours.showlines is True
+
+
+def test_dash_location_map_uses_locations_and_selection() -> None:
+    app_data = build_visualization_data("web/public/data")
+    defaults = app_data["defaults"]
+
+    figure = build_location_map_figure(app_data, defaults["source"], defaults["location"])
+
+    assert [trace.type for trace in figure.data] == ["scattergeo"]
+    assert list(figure.data[0].customdata) == [location["id"] for location in app_data["locations"]]
+    assert list(figure.data[0].lat) == [location["latitude"] for location in app_data["locations"]]
+    assert list(figure.data[0].lon) == [location["longitude"] for location in app_data["locations"]]
+    assert "#b3261e" in list(figure.data[0].marker.color)
+    assert figure.layout.geo.scope == "world"
+
+
+def test_dash_location_click_prefers_available_current_metric() -> None:
+    app_data = {
+        "availability": [
+            {
+                "source": "NASA_POWER",
+                "location_id": "phoenix",
+                "metric": "pressure_hpa",
+                "year_min": 2002,
+                "year_max": 2013,
+            },
+            {
+                "source": "NOAA",
+                "location_id": "phoenix",
+                "metric": "delta_t_k",
+                "year_min": 2005,
+                "year_max": 2010,
+            },
+        ]
+    }
+
+    availability = preferred_availability_for_location(
+        app_data,
+        "phoenix",
+        "NOAA",
+        "pressure_hpa",
+    )
+
+    assert availability == {
+        "source": "NOAA",
+        "location_id": "phoenix",
+        "metric": "delta_t_k",
+        "year_min": 2005,
+        "year_max": 2010,
+    }
