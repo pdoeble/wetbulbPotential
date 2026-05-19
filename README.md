@@ -13,20 +13,44 @@ und mehr moegliches Verdunstungskuehlpotenzial.
 
 ## App Nutzen
 
+Die Analyseansicht ist die erste Ansicht. Es gibt keine Landingpage.
+
 1. Standort waehlen.
 2. Datenquelle waehlen.
 3. Zeitraum und Metrik waehlen.
-4. Darstellung waehlen:
-   - Heatmap
-   - Isolinien
-   - Heatmap + Isolinien
-5. Grafik ueber die Plotly-Menueleiste als Bild exportieren.
+4. Plot-Modus waehlen:
+   - `Vehicles`: einzelne Monats-/Jahresdatenreihen
+   - `Percentiles`: Perzentilkurven ueber die ausgewaehlten Datenreihen
+5. Darstellung waehlen:
+   - `Lines`
+   - `Interpolated color field`
+6. Grafik als SVG exportieren.
 
-Die Standardansicht ist eine 12 x 24 Darstellung:
+## Einstellungen
 
-- Zeilen: Monate 1 bis 12
-- Spalten: lokale Uhrzeit 0 bis 23
-- Farbwert: Mittelwert der gewaehlten Metrik
+Die Einstellungen sind in vier Gruppen organisiert:
+
+- `Analysis`
+- `Percentiles`
+- `Lines & Legend`
+- `Figure & Export`
+
+Wichtige Defaults:
+
+- Plot mode: `Percentiles`
+- X axis: `Local hour [h]`
+- Y axis: `Relative wetbulb spread [%]`
+- Font family: `Times New Roman`
+- Figure size: `500 x 400 px`
+- Marker size: `0`
+
+## Datenansicht
+
+Die Daten werden als Stundenkurven ausgewertet:
+
+- X-Achse: lokale Uhrzeit 0 bis 23
+- Datenreihen: Monats-/Jahreskurven der ausgewaehlten Quelle, Station und Metrik
+- Perzentile: aus den ausgewaehlten Kurven interpoliert und berechnet
 
 ## Metriken
 
@@ -104,3 +128,14 @@ nuetzlich als Fallback, wenn fuer einen Standort keine passende Stationsreihe ve
 - Fuer technische Grenzfallanalysen sollten neben Mittelwerten auch Min/Max, Perzentile und
   konkrete Einzelstunden betrachtet werden.
 
+## Lokal Oeffnen
+
+```bash
+python -m wetbulb_pipeline dash --data web/public/data
+```
+
+Danach im Browser oeffnen:
+
+```text
+http://127.0.0.1:8050/
+```

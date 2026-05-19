@@ -48,3 +48,14 @@ python -m wetbulb_pipeline update --sources noaa nasa
 - NASA POWER wird pro Standort und Jahr geprueft.
 - Der Export aktualisiert `web/public/data/wetbulb_processed.sqlite` und `manifest.json`.
 
+## Statische Seite
+
+```bash
+python -m wetbulb_pipeline site --data web/public/data --out site
+```
+
+## Lokale Dash-GUI
+
+```bash
+python -m wetbulb_pipeline dash --data web/public/data
+```

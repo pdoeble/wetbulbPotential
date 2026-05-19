@@ -2,34 +2,33 @@
 
 ## Stack
 
-- Vite
-- React
-- TypeScript
-- Plotly
-- sql.js
+- Dash fuer die lokale GUI
+- Plotly fuer die Grafik
+- statisches HTML/JavaScript fuer GitHub Pages
 
 ## Datenladen
 
-Die App laedt zuerst:
+Die statische Seite laedt:
 
 ```text
-data/manifest.json
+assets/data.json
 ```
 
-Danach laedt sie:
+Diese Datei wird durch den Python-Site-Build aus `web/public/data/wetbulb_processed.sqlite`
+erzeugt.
 
-```text
-data/wetbulb_processed.sqlite
-```
+## Settings
 
-`sql.js` wird mit einer von Vite erzeugten WASM-Asset-URL initialisiert. Dadurch funktioniert der
-WASM-Pfad lokal und auf GitHub Pages ohne manuell kopierte Public-Datei.
+Die Settings sind identisch fuer Dash und statische Seite:
+
+- `Analysis`
+- `Percentiles`
+- `Lines & Legend`
+- `Figure & Export`
 
 ## Plottypen
 
-- Heatmap
-- Isolinien
-- Heatmap + Isolinien
-
-Die Matrix ist immer Monat x lokale Stunde.
+- `Vehicles`: jede Datenreihe als Linie
+- `Percentiles`: Perzentile ueber die ausgewaehlten Datenreihen
+- `Interpolated color field`: Falschfarbenfeld zwischen Worst und Top
 
