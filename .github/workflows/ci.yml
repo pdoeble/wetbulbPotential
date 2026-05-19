@@ -11,20 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: web
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: web
-        run: npm run build
-
       - uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: environment.yml
@@ -35,10 +21,13 @@ jobs:
         shell: bash -el {0}
         run: pytest
 
+      - name: Build static Python site
+        shell: bash -el {0}
+        run: python -m wetbulb_pipeline site --data web/public/data --out site
+
       - name: Check processed DB size
         shell: bash
         run: |
           test -f web/public/data/wetbulb_processed.sqlite
           size=$(stat -c%s web/public/data/wetbulb_processed.sqlite)
           test "$size" -lt 104857600
-

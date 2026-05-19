@@ -1,6 +1,9 @@
 data/raw/
+site/
+site-server.log
 web/node_modules/
 web/dist/
+web/.vite/
 web/public/sql-wasm.wasm
 web/vite-dev.log
 web/preview.log

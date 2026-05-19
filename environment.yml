@@ -14,4 +14,6 @@ dependencies:
   - pytest
   - ruff
   - pip
-
+  - pip:
+      - dash
+      - plotly

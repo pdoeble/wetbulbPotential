@@ -13,6 +13,7 @@ from .database import (
 )
 from .export import export_processed
 from .importers import dwd, nasa, noaa
+from .site import build_site
 from .sync import update_all
 
 DEFAULT_CONFIG = "configs/stations.yml"
@@ -80,6 +81,16 @@ def main(argv: list[str] | None = None) -> None:
     update_parser.add_argument("--dry-run", action="store_true")
     update_parser.add_argument("--no-export", action="store_true")
 
+    site_parser = subparsers.add_parser("site")
+    site_parser.add_argument("--data", default="web/public/data")
+    site_parser.add_argument("--out", default="site")
+
+    dash_parser = subparsers.add_parser("dash")
+    dash_parser.add_argument("--data", default="web/public/data")
+    dash_parser.add_argument("--host", default="127.0.0.1")
+    dash_parser.add_argument("--port", type=int, default=8050)
+    dash_parser.add_argument("--debug", action="store_true")
+
     args = parser.parse_args(argv)
 
     if args.command == "init-db":
@@ -120,6 +131,13 @@ def main(argv: list[str] | None = None) -> None:
                 f"{status}\t{result.source}\t{result.location_id}\t"
                 f"{result.imported}\t{result.input_ref}"
             )
+    elif args.command == "site":
+        build_site(args.data, args.out)
+        print(f"Built static site in {args.out}")
+    elif args.command == "dash":
+        from .dash_app import run_dash
+
+        run_dash(args.data, args.host, args.port, args.debug)
 
 
 def _init_db(db_path: str, config_path: str) -> None:
