@@ -63,17 +63,43 @@ def create_dash_app(data_dir: str = "web/public/data"):
                 [
                     html.Section(
                         [
-                            html.H2(
-                                "Locations",
+                            html.Div(
+                                [
+                                    html.H2(
+                                        "Locations",
+                                        style={
+                                            "fontSize": "14px",
+                                            "margin": "0",
+                                            "letterSpacing": "0",
+                                        },
+                                    ),
+                                    html.Button(
+                                        "Export map SVG",
+                                        id="exportMapSvg",
+                                        style={
+                                            "width": "auto",
+                                            "minHeight": "30px",
+                                            "padding": "4px 10px",
+                                            "border": "1px solid #17202e",
+                                            "borderRadius": "6px",
+                                            "background": "#17202e",
+                                            "color": "#fff",
+                                            "cursor": "pointer",
+                                            "whiteSpace": "nowrap",
+                                        },
+                                    ),
+                                ],
                                 style={
-                                    "fontSize": "14px",
-                                    "margin": "0",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "space-between",
+                                    "gap": "10px",
                                     "padding": "10px 12px 0",
                                 },
                             ),
                             dcc.Graph(
                                 id="locationMap",
-                                config={"displayModeBar": False},
+                                config={"displayModeBar": False, "scrollZoom": True},
                                 style={"width": "100%", "height": "100%", "minHeight": "420px"},
                             ),
                         ],
@@ -138,6 +164,7 @@ def create_dash_app(data_dir: str = "web/public/data"):
                 style={**_box_style(), "padding": "12px", "fontSize": "13px"},
             ),
             html.Div(id="exportStatus", style={"display": "none"}),
+            html.Div(id="exportMapStatus", style={"display": "none"}),
         ],
         className="dash-app",
         style={
@@ -162,8 +189,6 @@ def create_dash_app(data_dir: str = "web/public/data"):
             Output("source", "value"),
             Output("location", "value"),
             Output("metric", "value"),
-            Output("yearStart", "value"),
-            Output("yearEnd", "value"),
         ],
         Input("locationMap", "clickData"),
         [State("source", "value"), State("metric", "value")],
@@ -187,9 +212,27 @@ def create_dash_app(data_dir: str = "web/public/data"):
             availability["source"],
             availability["location_id"],
             availability["metric"],
-            availability["year_min"],
-            availability["year_max"],
         )
+
+    @app.callback(
+        [
+            Output("yearStart", "options"),
+            Output("yearEnd", "options"),
+            Output("yearStart", "value"),
+            Output("yearEnd", "value"),
+        ],
+        [
+            Input("source", "value"),
+            Input("location", "value"),
+            Input("metric", "value"),
+        ],
+    )
+    def _reset_year_range(source, location, metric):
+        availability = availability_for_selection(app_data, source, location, metric)
+        if not availability:
+            raise PreventUpdate
+        options = _year_options(availability["year_min"], availability["year_max"])
+        return options, options, availability["year_min"], availability["year_max"]
 
     @app.callback(
         Output("plot", "figure"),
@@ -275,6 +318,32 @@ def create_dash_app(data_dir: str = "web/public/data"):
         Input("exportSvg", "n_clicks"),
         State("figureWidth", "value"),
         State("figureHeight", "value"),
+        prevent_initial_call=True,
+    )
+
+    app.clientside_callback(
+        """
+        function(nClicks) {
+            if (!nClicks) {
+                return window.dash_clientside.no_update;
+            }
+            const root = document.getElementById('locationMap');
+            const map = root && (root.querySelector('.js-plotly-plot') || root);
+            if (!window.Plotly || !map) {
+                return 'missing-map';
+            }
+            const bounds = map.getBoundingClientRect ? map.getBoundingClientRect() : {};
+            Plotly.downloadImage(map, {
+                format: 'svg',
+                filename: 'wetbulb-location-map',
+                width: Math.max(320, Math.round(bounds.width || 640)),
+                height: Math.max(240, Math.round(bounds.height || 420))
+            });
+            return String(nClicks);
+        }
+        """,
+        Output("exportMapStatus", "children"),
+        Input("exportMapSvg", "n_clicks"),
         prevent_initial_call=True,
     )
 
@@ -567,10 +636,10 @@ def preferred_availability_for_location(
         (
             item
             for item in (
-                _find_availability(options, source, metric),
-                _find_availability(options, source, "delta_t_k"),
-                _find_availability(options, None, metric),
-                _find_availability(options, None, "delta_t_k"),
+                _find_availability(options, source, None, metric),
+                _find_availability(options, source, None, "delta_t_k"),
+                _find_availability(options, None, None, metric),
+                _find_availability(options, None, None, "delta_t_k"),
                 options[0] if options else None,
             )
             if item
@@ -579,9 +648,24 @@ def preferred_availability_for_location(
     )
 
 
+def availability_for_selection(
+    app_data: dict[str, Any],
+    source: str | None,
+    location_id: str | None,
+    metric: str | None,
+) -> dict[str, Any] | None:
+    return _find_availability(
+        app_data["availability"],
+        source,
+        location_id,
+        metric,
+    )
+
+
 def _find_availability(
     options: list[dict[str, Any]],
     source: str | None,
+    location_id: str | None,
     metric: str | None,
 ) -> dict[str, Any] | None:
     return next(
@@ -589,6 +673,7 @@ def _find_availability(
             item
             for item in options
             if (source is None or item["source"] == source)
+            and (location_id is None or item["location_id"] == location_id)
             and (metric is None or item["metric"] == metric)
         ),
         None,
@@ -596,12 +681,19 @@ def _find_availability(
 
 
 def _location_map_label(location: dict[str, Any]) -> str:
-    rows = [f"<strong>{location['name']}</strong>", location["country"]]
+    rows = [location["name"], location["country"]]
     if location.get("climate_label"):
         rows.append(location["climate_label"])
     if location.get("elevation_m") is not None:
         rows.append(f"{float(location['elevation_m']):.0f} m")
     return "<br>".join(rows)
+
+
+def _year_options(year_min: int, year_max: int) -> list[dict[str, int | str]]:
+    return [
+        {"label": str(year), "value": year}
+        for year in range(int(year_min), int(year_max) + 1)
+    ]
 
 
 def _cell_text(matrix: list[list[float | None]]) -> list[list[str]]:

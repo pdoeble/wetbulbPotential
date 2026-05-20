@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from wetbulb_pipeline.dash_app import (
+    availability_for_selection,
     build_dash_figure,
     build_location_map_figure,
     preferred_availability_for_location,
@@ -81,6 +82,15 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert data["defaults"]["showTitle"] is True
     assert data["defaults"]["showContourLabels"] is True
     assert data["defaults"]["isolineCount"] == 10
+    default_availability = availability_for_selection(
+        data,
+        data["defaults"]["source"],
+        data["defaults"]["location"],
+        data["defaults"]["metric"],
+    )
+    assert default_availability is not None
+    assert data["defaults"]["yearStart"] == default_availability["year_min"]
+    assert data["defaults"]["yearEnd"] == default_availability["year_max"]
     assert data["plotTypes"] == [
         {"id": "heatmap", "label": "Heatmap"},
         {"id": "contour", "label": "Isolines"},
@@ -99,6 +109,13 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert "plotly_click" in index
     assert "scattergeo" in index
     assert "exportPlotSvg" in index
+    assert "exportMapSvg" in index
+    assert "Export map SVG" in index
+    assert "wetbulb-location-map" in index
+    assert "scrollZoom: true" in index
+    assert "<strong>${location.name}</strong>" not in index
+    assert "refreshDependentOptions(true)" in index
+    assert "availableYears(resetYearRange = false)" in index
     assert "MONTH_LABELS" in index
     assert "HOUR_TICKS" in index
     assert "plotTitle" in index
@@ -128,6 +145,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Legend font size",
         "Show title",
         "Export SVG",
+        "Export map SVG",
     ]:
         assert control in index
 
@@ -186,6 +204,7 @@ def test_dash_location_map_uses_locations_and_selection() -> None:
     assert list(figure.data[0].customdata) == [location["id"] for location in app_data["locations"]]
     assert list(figure.data[0].lat) == [location["latitude"] for location in app_data["locations"]]
     assert list(figure.data[0].lon) == [location["longitude"] for location in app_data["locations"]]
+    assert all("<strong>" not in text for text in figure.data[0].text)
     assert "#b3261e" in list(figure.data[0].marker.color)
     assert figure.layout.geo.scope == "world"
 

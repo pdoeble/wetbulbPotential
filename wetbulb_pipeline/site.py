@@ -74,9 +74,15 @@ def _index_html() -> str:
         grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
       }
+      .map-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px 0;
+      }
       .map-panel h2 {
         margin: 0;
-        padding: 10px 12px 0;
         font-size: 14px;
         letter-spacing: 0;
       }
@@ -128,6 +134,12 @@ def _index_html() -> str:
         color: #fff;
         cursor: pointer;
       }
+      .map-header button {
+        width: auto;
+        min-height: 30px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
       .figure-area {
         overflow: hidden;
         min-height: 460px;
@@ -152,13 +164,16 @@ def _index_html() -> str:
       Show cell values Show isoline labels Isoline count cmin cmax Figure title Font family
       Figure width [px] Figure height [px] Base font size Title font size Axis title font size
       Tick font size Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
-      Locations
+      Locations Export map SVG
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
       <section class="visualization-grid">
         <section class="map-panel">
-          <h2>Locations</h2>
+          <div class="map-header">
+            <h2>Locations</h2>
+            <button id="exportMapSvg" type="button">Export map SVG</button>
+          </div>
           <div id="locationMap"></div>
         </section>
         <section class="figure-area">
@@ -184,6 +199,8 @@ def _index_html() -> str:
       let appData;
       let state;
 
+      document.getElementById('exportMapSvg').addEventListener('click', exportMapSvg);
+
       fetch('assets/data.json')
         .then((response) => response.json())
         .then((data) => {
@@ -191,7 +208,7 @@ def _index_html() -> str:
           state = { ...data.defaults };
           renderSourceBox();
           renderSettings();
-          refreshDependentOptions();
+          refreshDependentOptions(true);
           updateLocationMap();
           updatePlot();
         });
@@ -254,7 +271,7 @@ def _index_html() -> str:
           state[control.id] = control.type === 'number'
             ? (input.value === '' ? null : Number(input.value))
             : input.value;
-          refreshDependentOptions();
+          refreshDependentOptions(['source', 'location', 'metric'].includes(control.id));
           updateLocationMap();
           updatePlot();
         });
@@ -262,12 +279,13 @@ def _index_html() -> str:
         return label;
       }
 
-      function refreshDependentOptions() {
+      function refreshDependentOptions(resetYearRange = false) {
         fillOptions(document.getElementById('source'), availableSources());
         fillOptions(document.getElementById('location'), availableLocations());
         fillOptions(document.getElementById('metric'), availableMetrics());
-        fillOptions(document.getElementById('yearStart'), availableYears());
-        fillOptions(document.getElementById('yearEnd'), availableYears());
+        const years = availableYears(resetYearRange);
+        fillOptions(document.getElementById('yearStart'), years);
+        fillOptions(document.getElementById('yearEnd'), years);
         fillOptions(document.getElementById('plotType'), appData.plotTypes);
       }
 
@@ -303,15 +321,20 @@ def _index_html() -> str:
         return appData.metrics.filter((item) => ids.has(item.id)).map((item) => ({ id: item.id, label: item.label }));
       }
 
-      function availableYears() {
+      function availableYears(resetYearRange = false) {
         const availability = appData.availability.find((item) =>
           item.source === state.source && item.location_id === state.location && item.metric === state.metric
         );
         if (!availability) return [];
         const years = [];
         for (let year = availability.year_min; year <= availability.year_max; year += 1) years.push(year);
-        if (Number(state.yearStart) < availability.year_min || Number(state.yearStart) > availability.year_max) state.yearStart = availability.year_min;
-        if (Number(state.yearEnd) < availability.year_min || Number(state.yearEnd) > availability.year_max) state.yearEnd = availability.year_max;
+        if (resetYearRange) {
+          state.yearStart = availability.year_min;
+          state.yearEnd = availability.year_max;
+        } else {
+          if (Number(state.yearStart) < availability.year_min || Number(state.yearStart) > availability.year_max) state.yearStart = availability.year_min;
+          if (Number(state.yearEnd) < availability.year_min || Number(state.yearEnd) > availability.year_max) state.yearEnd = availability.year_max;
+        }
         return years;
       }
 
@@ -365,6 +388,7 @@ def _index_html() -> str:
           plot_bgcolor: '#ffffff'
         }, {
           responsive: true,
+          scrollZoom: true,
           displayModeBar: false
         });
         if (!map.dataset.clickHandlerAttached) {
@@ -377,7 +401,7 @@ def _index_html() -> str:
       }
 
       function locationMapLabel(location) {
-        const rows = [`<strong>${location.name}</strong>`, location.country];
+        const rows = [location.name, location.country];
         if (location.climate_label) rows.push(location.climate_label);
         if (location.elevation_m !== null && location.elevation_m !== undefined) {
           rows.push(`${Number(location.elevation_m).toFixed(0)} m`);
@@ -432,6 +456,19 @@ def _index_html() -> str:
           filename: 'wetbulb-potential',
           width: Number(state.figureWidth) || 500,
           height: Number(state.figureHeight) || 400
+        });
+      }
+
+      function exportMapSvg() {
+        const root = document.getElementById('locationMap');
+        const map = root?.querySelector('.js-plotly-plot') || root;
+        if (!map || !window.Plotly) return;
+        const bounds = map.getBoundingClientRect ? map.getBoundingClientRect() : {};
+        Plotly.downloadImage(map, {
+          format: 'svg',
+          filename: 'wetbulb-location-map',
+          width: Math.max(320, Math.round(bounds.width || 640)),
+          height: Math.max(240, Math.round(bounds.height || 420))
         });
       }
 
