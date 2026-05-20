@@ -247,7 +247,9 @@ def create_dash_app(data_dir: str = "web/public/data"):
             Input("preset", "value"),
             Input("showValues", "value"),
             Input("showContourLabels", "value"),
-            Input("isolineCount", "value"),
+            Input("colorFillMode", "value"),
+            Input("isolineStart", "value"),
+            Input("isolineStep", "value"),
             Input("cmin", "value"),
             Input("cmax", "value"),
             Input("figureTitle", "value"),
@@ -273,7 +275,9 @@ def create_dash_app(data_dir: str = "web/public/data"):
             "preset",
             "showValues",
             "showContourLabels",
-            "isolineCount",
+            "colorFillMode",
+            "isolineStart",
+            "isolineStep",
             "cmin",
             "cmax",
             "figureTitle",
@@ -559,41 +563,13 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         int(settings["yearEnd"]),
     )
     fig = go.Figure()
-    color_limits = _color_limits(settings)
     contour_kwargs = _contour_kwargs(matrix, settings)
     if settings["plotType"] == "heatmap":
-        fig.add_trace(
-            go.Heatmap(
-                x=HOURS,
-                y=MONTHS,
-                z=matrix,
-                colorscale=COLORSCALE,
-                colorbar=_colorbar(metric),
-                **color_limits,
-                hovertemplate=(
-                    "Month %{y}<br>Hour %{x}:00<br>"
-                    f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
-                ),
-                text=_cell_text(matrix) if settings["showValues"] else None,
-                texttemplate="%{text}" if settings["showValues"] else None,
-                textfont={"size": max(8, int(settings["tickFontSize"]) - 4)},
-            )
-        )
+        fig.add_trace(_color_trace(matrix, metric, settings))
+        if settings["showValues"]:
+            fig.add_trace(_cell_value_trace(matrix, settings))
     elif settings["plotType"] == "combined":
-        fig.add_trace(
-            go.Heatmap(
-                x=HOURS,
-                y=MONTHS,
-                z=matrix,
-                colorscale=COLORSCALE,
-                colorbar=_colorbar(metric),
-                **color_limits,
-                hovertemplate=(
-                    "Month %{y}<br>Hour %{x}:00<br>"
-                    f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
-                ),
-            )
-        )
+        fig.add_trace(_color_trace(matrix, metric, settings))
         fig.add_trace(
             go.Contour(
                 x=HOURS,
@@ -823,8 +799,33 @@ def _year_options(year_min: int, year_max: int) -> list[dict[str, int | str]]:
     ]
 
 
-def _cell_text(matrix: list[list[float | None]]) -> list[list[str]]:
-    return [["" if value is None else f"{value:.2f}" for value in row] for row in matrix]
+def _color_trace(
+    matrix: list[list[float | None]],
+    metric: dict[str, Any],
+    settings: dict[str, Any],
+):
+    import plotly.graph_objects as go
+
+    common = {
+        "x": HOURS,
+        "y": MONTHS,
+        "z": matrix,
+        "colorscale": COLORSCALE,
+        "colorbar": _colorbar(metric),
+        **_color_limits(settings),
+        "hovertemplate": (
+            "Month %{y}<br>Hour %{x}:00<br>"
+            f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
+        ),
+    }
+    if settings.get("colorFillMode") == "grid":
+        return go.Heatmap(**common)
+    return go.Contour(
+        **common,
+        contours={"coloring": "heatmap", "showlines": False},
+        line={"width": 0},
+        showscale=True,
+    )
 
 
 def _cell_value_trace(matrix: list[list[float | None]], settings: dict[str, Any]):
@@ -892,34 +893,36 @@ def _color_limits(settings: dict[str, Any]) -> dict[str, float]:
 def _contour_kwargs(
     matrix: list[list[float | None]], settings: dict[str, Any]
 ) -> dict[str, Any]:
+    start = _isoline_start(settings)
+    step = _isoline_step(settings)
     contours: dict[str, Any] = {
         "coloring": "none",
         "showlabels": settings["showContourLabels"],
         "showlines": True,
+        "start": start,
+        "end": start + step,
+        "size": step,
     }
     values = [value for row in matrix for value in row if value is not None]
     if not values:
-        return {"ncontours": _isoline_count(settings), "contours": contours}
-    value_min = min(values)
+        return {"autocontour": False, "contours": contours}
     value_max = max(values)
-    isoline_count = _isoline_count(settings)
-    if value_max <= value_min:
-        return {"ncontours": isoline_count, "contours": contours}
-    contours.update(
-        {
-            "start": value_min,
-            "end": value_max,
-            "size": (value_max - value_min) / max(1, isoline_count - 1),
-        }
-    )
+    contours["end"] = max(value_max, start + step)
     return {"autocontour": False, "contours": contours}
 
 
-def _isoline_count(settings: dict[str, Any]) -> int:
-    value = _number_or_none(settings.get("isolineCount"))
+def _isoline_start(settings: dict[str, Any]) -> float:
+    value = _number_or_none(settings.get("isolineStart"))
     if value is None:
-        return 10
-    return min(50, max(2, int(round(value))))
+        return 0.0
+    return float(value)
+
+
+def _isoline_step(settings: dict[str, Any]) -> float:
+    value = _number_or_none(settings.get("isolineStep"))
+    if value is None or value <= 0:
+        return 1.0
+    return float(value)
 
 
 def _number_or_none(value: Any) -> float | None:

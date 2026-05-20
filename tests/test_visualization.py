@@ -81,7 +81,9 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert data["defaults"]["legendFontSize"] == 16
     assert data["defaults"]["showTitle"] is True
     assert data["defaults"]["showContourLabels"] is True
-    assert data["defaults"]["isolineCount"] == 10
+    assert data["defaults"]["colorFillMode"] == "interpolated"
+    assert data["defaults"]["isolineStart"] == 0
+    assert data["defaults"]["isolineStep"] == 1
     assert data["defaults"]["mapPreset"] == "world"
     assert data["defaults"]["mapViewport"] == "[-180,180,-90,90]"
     default_availability = availability_for_selection(
@@ -99,8 +101,13 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         {"id": "combined", "label": "Heatmap + isolines"},
     ]
     assert "combinedContour" in index
+    assert "colorTrace" in index
     assert "contourSettings" in index
     assert "coloring: 'none'" in index
+    assert "coloring: 'heatmap'" in index
+    assert "state.colorFillMode === 'grid'" in index
+    assert "isolineStart" in index
+    assert "isolineStep" in index
 
     for panel in ["Data", "Plot", "Map", "Figure & Export"]:
         assert panel in index
@@ -141,10 +148,14 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Year start",
         "Year end",
         "Display",
+        "Color fill",
+        "Interpolated",
+        "Grid cells",
         "Preset",
         "Show cell values",
         "Show isoline labels",
-        "Isoline count",
+        "First isoline [K]",
+        "Isoline step [K]",
         "cmin",
         "cmax",
         "Map preset",
@@ -170,7 +181,10 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
 
     figure = build_dash_figure(app_data, app_data["defaults"])
 
-    assert [trace.type for trace in figure.data] == ["heatmap", "contour"]
+    assert [trace.type for trace in figure.data] == ["contour", "contour"]
+    assert figure.data[0].contours.coloring == "heatmap"
+    assert figure.data[0].contours.showlines is False
+    assert figure.data[0].showscale is True
     assert figure.data[0].zmin == 0
     assert figure.data[0].zmax == 16
     assert figure.data[1].zmin is None
@@ -178,7 +192,8 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
     assert figure.data[1].autocontour is False
     assert figure.data[1].contours.coloring == "none"
     assert figure.data[1].contours.showlines is True
-    assert figure.data[1].contours.size > 0
+    assert figure.data[1].contours.start == 0
+    assert figure.data[1].contours.size == 1
     assert list(figure.layout.xaxis.tickvals) == list(range(0, 24, 2))
     assert figure.layout.xaxis.tickangle == 0
     assert list(figure.layout.yaxis.ticktext) == [
@@ -214,6 +229,20 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
     )
     assert figure.layout.margin.b >= 90
     assert figure.layout.annotations[0].y <= -0.3
+
+
+def test_grid_color_fill_mode_uses_heatmap_layer() -> None:
+    app_data = build_visualization_data("web/public/data")
+    settings = dict(app_data["defaults"])
+    settings["colorFillMode"] = "grid"
+
+    figure = build_dash_figure(app_data, settings)
+
+    assert [trace.type for trace in figure.data] == ["heatmap", "contour"]
+    assert figure.data[0].zmin == 0
+    assert figure.data[0].zmax == 16
+    assert figure.data[1].contours.start == 0
+    assert figure.data[1].contours.size == 1
 
 
 def test_dash_location_map_uses_locations_and_selection() -> None:

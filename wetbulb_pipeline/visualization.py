@@ -17,7 +17,9 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "showValues": False,
     "showTitle": True,
     "showContourLabels": True,
-    "isolineCount": 10,
+    "colorFillMode": "interpolated",
+    "isolineStart": 0,
+    "isolineStep": 1,
     "mapPreset": "world",
     "mapViewport": "[-180,180,-90,90]",
     "figureTitle": "Wetbulb Potential",
@@ -52,6 +54,15 @@ CONTROL_PANELS: list[dict[str, Any]] = [
         "controls": [
             {"id": "plotType", "label": "Display", "type": "select"},
             {
+                "id": "colorFillMode",
+                "label": "Color fill",
+                "type": "select",
+                "options": [
+                    {"id": "interpolated", "label": "Interpolated"},
+                    {"id": "grid", "label": "Grid cells"},
+                ],
+            },
+            {
                 "id": "preset",
                 "label": "Preset",
                 "type": "select",
@@ -62,7 +73,8 @@ CONTROL_PANELS: list[dict[str, Any]] = [
             },
             {"id": "showValues", "label": "Show cell values", "type": "checkbox"},
             {"id": "showContourLabels", "label": "Show isoline labels", "type": "checkbox"},
-            {"id": "isolineCount", "label": "Isoline count", "type": "number"},
+            {"id": "isolineStart", "label": "First isoline [K]", "type": "number"},
+            {"id": "isolineStep", "label": "Isoline step [K]", "type": "number"},
             {"id": "cmin", "label": "cmin", "type": "number"},
             {"id": "cmax", "label": "cmax", "type": "number"},
         ],
