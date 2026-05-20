@@ -9,6 +9,12 @@ Diese Hinweise gelten fuer dieses Repository und als Vorlage fuer aehnliche Proj
 - Der statische Build muss reproduzierbar per CLI und per GitHub Actions erzeugbar sein.
 - Trenne Rohdaten, aufbereitete Daten, Build-Skripte und generierte Website-Ausgabe klar.
 
+## Arbeitsabschluss
+
+- Pruefe nach jeder fachlichen Code-, Daten-, Pipeline- oder UI-Aenderung, ob README, Wiki/Doku und Quellenhinweise noch stimmen. Aktualisiere die Doku im selben Arbeitsgang, wenn sich Verhalten, Bedienung, Datenumfang, Export, Build oder Deployment geaendert haben.
+- Committe abgeschlossene Arbeiten in sinnvollen, thematisch getrennten Commits. Lasse keine fertigen Code-/Doku-Aenderungen uncommitted zurueck, wenn der User nicht ausdruecklich etwas anderes verlangt.
+- Pushe nur nach ausdruecklicher Aufforderung des Users.
+
 ## Daten
 
 - Dokumentiere fuer jedes Dataset Quelle, URL, Abruf- oder Extraktionszeitpunkt, Einheiten, Transformationen und bekannte Einschraenkungen.
@@ -47,7 +53,7 @@ Diese Hinweise gelten fuer dieses Repository und als Vorlage fuer aehnliche Proj
 - Nach Aenderungen an der Website immer lokal bauen und mit einem statischen Server testen:
 
 ```bash
-python -m adac_ev_curves.cli site --data adac_ev_charging_curves/output --out site
+python -m wetbulb_pipeline site --data web/public/data --out site
 python -m http.server 8060 --directory site
 ```
 

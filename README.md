@@ -22,8 +22,8 @@ Die Analyseansicht ist die erste Ansicht. Es gibt keine Landingpage.
    - `Heatmap`
    - `Isolines`
    - `Heatmap + isolines`
-5. Schriftgroessen und SAE-/Excel-Preset einstellen.
-6. Grafik als SVG exportieren.
+5. Farbfuellung, Isolinien, Farbskala, Kartenausschnitt und Schriftgroessen einstellen.
+6. Grafik und aktuelle Kartenansicht als SVG exportieren.
 
 ## Einstellungen
 
@@ -31,11 +31,18 @@ Die Einstellungen sind in vier Gruppen organisiert:
 
 - `Data`
 - `Plot`
+- `Map`
 - `Figure & Export`
 
 Wichtige Defaults:
 
 - Display: `Heatmap + isolines`
+- Color fill: `Interpolated`
+- Isolines: erste Linie `0 K`, Schrittweite `1 K`
+- Color scale: `cmin = 0`, `cmax = 16`
+- Jahre: automatisch voller verfuegbarer Zeitraum der gewaehlten Quelle/Location/Metrik
+- Map preset: `World`; weitere Presets sind `Europe`, `North America`, `Middle East` und
+  `Asia (India to Japan)`
 - X axis: `Local hour [h]`
 - Y axis: `Month [-]`
 - Font family: `Times New Roman`
@@ -46,9 +53,26 @@ Wichtige Defaults:
 Die Daten werden als 12 x 24 Matrix ausgewertet:
 
 - X-Achse: lokale Uhrzeit 0 bis 23
-- Y-Achse: Monat 1 bis 12
+- X-Achsenbeschriftung: jede zweite Stunde, waagerecht
+- Y-Achse: englische Monatsnamen `Jan` bis `Dec`
 - Zellwerte: gewichteter Mittelwert ueber den ausgewaehlten Jahresbereich
-- Darstellungsformen: Colorplot, Isolinien oder Colorplot mit Isolinien
+- Darstellungsformen: interpolierte Farbfuellung oder Rasterzellen, Isolinien oder Farbfuellung
+  mit Isolinien
+- `cmin` und `cmax` fixieren nur die Farbskala. Die Isolinien werden separat ueber erste Linie
+  und Schrittweite definiert.
+- Der Plottitel enthaelt Standort und Land in der ersten Zeile und `Wetbulb Potential` in der
+  zweiten Zeile.
+- Die Fusszeile unter dem Plot zeigt nur Quelle und Zeitraum, z. B.
+  `Data Source: NASA_POWER 2002-2025`.
+
+## Karte Und Export
+
+Die Standortkarte steht links neben dem Plot. Die Settings liegen darunter. Der aktuelle Zoom wird
+im Textfeld `Map viewport [lon_min,lon_max,lat_min,lat_max]` gehalten und bei interaktivem Zoomen
+aktualisiert. Der Wert kann kopiert, spaeter wieder eingefuegt und ueber Presets gesetzt werden.
+
+Der Karten-SVG-Export verwendet die aktuelle Zoom-/Viewport-Einstellung. Der Plot-SVG-Export nutzt
+die eingestellte Figure-Groesse.
 
 ## Metriken
 
@@ -170,6 +194,10 @@ Der Standardexport fuer Pages ist bewusst klein:
 ```bash
 python -m wetbulb_pipeline export
 ```
+
+Falls ein lokaler Dash-Server oder ein SQLite-Viewer die veroeffentlichte Datenbank sperrt, fragt
+das Update interaktiv, ob die lokalen Prozesse beendet werden sollen. Nach erfolgreichem Export kann
+der Server auf Wunsch direkt neu gestartet werden.
 
 Ein lokaler Voll-Export mit allen Metriken ist moeglich, aber nicht fuer den Commit nach GitHub
 Pages gedacht:
