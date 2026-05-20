@@ -9,6 +9,16 @@ from .database import PROCESSED_SCHEMA, connect, init_raw_db
 
 DEFAULT_EXPORT_METRICS = ("delta_t_k",)
 
+
+class ProcessedDatabaseLockedError(RuntimeError):
+    def __init__(self, processed_path: Path, temp_path: Path) -> None:
+        self.processed_path = processed_path
+        self.temp_path = temp_path
+        super().__init__(
+            f"Cannot replace processed database {processed_path}; it is locked by another process."
+        )
+
+
 METRICS = {
     "delta_t_k": {
         "label": "Delta T dry bulb - wet bulb",
@@ -170,11 +180,7 @@ def export_processed(
     try:
         os.replace(temp_path, processed_path)
     except PermissionError as exc:
-        raise RuntimeError(
-            f"Cannot replace processed database {processed_path}; it is locked by "
-            "another process. Close local Dash/static servers or SQLite viewers that "
-            "use this file, then rerun `python -m wetbulb_pipeline export`."
-        ) from exc
+        raise ProcessedDatabaseLockedError(processed_path, temp_path) from exc
 
     manifest_file = Path(manifest_path)
     manifest_file.parent.mkdir(parents=True, exist_ok=True)

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+import os
+import re
+import subprocess
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -14,7 +19,7 @@ from .database import (
     upsert_locations,
     upsert_observations,
 )
-from .export import DEFAULT_EXPORT_METRICS, export_processed
+from .export import DEFAULT_EXPORT_METRICS, ProcessedDatabaseLockedError, export_processed
 from .importers import dwd, nasa, noaa
 from .models import Location
 
@@ -34,6 +39,18 @@ class SyncResult:
     input_ref: str
     imported: int
     skipped: bool
+
+
+@dataclass(frozen=True)
+class _ServerProcess:
+    pid: int
+    port: int
+    command_line: str
+    restart_args: tuple[str, ...]
+
+    @property
+    def label(self) -> str:
+        return f"PID {self.pid} on port {self.port}: {self.command_line}"
 
 
 @dataclass
@@ -131,13 +148,23 @@ def update_all(
     if export_after and not dry_run:
         progress_state.emit(f"Exporting processed data: {processed_db}")
         export_years = _export_years(config, years)
-        export_processed(
-            raw_db,
-            processed_db,
-            manifest_path,
-            metrics=export_metrics,
-            years=export_years,
-        )
+        try:
+            export_processed(
+                raw_db,
+                processed_db,
+                manifest_path,
+                metrics=export_metrics,
+                years=export_years,
+            )
+        except ProcessedDatabaseLockedError:
+            _handle_locked_export(
+                raw_db,
+                processed_db,
+                manifest_path,
+                export_metrics,
+                export_years,
+                progress_state,
+            )
         progress_state.emit(f"Export complete: {processed_db}; manifest {manifest_path}")
     progress_state.emit(f"Finished update: {len(results)} result rows")
     return results
@@ -153,6 +180,154 @@ def _location_config(config: dict, location_id: str) -> dict:
 def _export_years(config: dict, update_years: tuple[int, int]) -> tuple[int, int]:
     default_start = int(config.get("defaults", {}).get("year_start", update_years[0]))
     return default_start, int(update_years[1])
+
+
+def _handle_locked_export(
+    raw_db: str | Path,
+    processed_db: str | Path,
+    manifest_path: str | Path,
+    export_metrics: list[str] | tuple[str, ...] | None,
+    export_years: tuple[int, int],
+    progress: _Progress,
+) -> None:
+    candidates = _local_server_processes()
+    if candidates:
+        progress.emit("Processed database is locked. Candidate local servers:")
+        for candidate in candidates:
+            progress.emit(f"  {candidate.label}")
+    else:
+        progress.emit(
+            "Processed database is locked, but no local Dash/static server process "
+            "was detected on the usual ports."
+        )
+    if not _confirm("Kill detected local server process(es) and retry export? [y/N] "):
+        raise RuntimeError(
+            f"Cannot replace processed database {processed_db}; close the locking process "
+            "and rerun the update."
+        )
+    if not candidates:
+        raise RuntimeError("No local server processes were found to stop.")
+
+    stopped = _stop_processes(candidates, progress)
+    export_processed(
+        raw_db,
+        processed_db,
+        manifest_path,
+        metrics=export_metrics,
+        years=export_years,
+    )
+    if stopped and _confirm("Restart stopped local server process(es)? [y/N] "):
+        _restart_processes(stopped, progress)
+
+
+def _confirm(prompt: str) -> bool:
+    answer = input(prompt).strip().casefold()
+    return answer in {"y", "yes", "j", "ja"}
+
+
+def _stop_processes(candidates: list[_ServerProcess], progress: _Progress) -> list[_ServerProcess]:
+    stopped: list[_ServerProcess] = []
+    for candidate in candidates:
+        try:
+            os.kill(candidate.pid, 15)
+            stopped.append(candidate)
+            progress.emit(f"Stopped process {candidate.pid}")
+        except OSError as exc:
+            progress.emit(f"Could not stop process {candidate.pid}: {exc}")
+    return stopped
+
+
+def _restart_processes(candidates: list[_ServerProcess], progress: _Progress) -> None:
+    for candidate in candidates:
+        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        subprocess.Popen(  # noqa: S603
+            list(candidate.restart_args),
+            cwd=Path.cwd(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=flags,
+        )
+        progress.emit(f"Restarted local server on port {candidate.port}")
+
+
+def _local_server_processes() -> list[_ServerProcess]:
+    if os.name == "nt":
+        return _windows_local_server_processes()
+    return []
+
+
+def _windows_local_server_processes() -> list[_ServerProcess]:
+    script = r"""
+$connections = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+  Where-Object { $_.LocalPort -in @(8050,8051,8060) } |
+  Select-Object LocalPort, OwningProcess
+$rows = foreach ($connection in $connections) {
+  $process = Get-CimInstance Win32_Process `
+    -Filter "ProcessId = $($connection.OwningProcess)" `
+    -ErrorAction SilentlyContinue
+  if ($process) {
+    [PSCustomObject]@{
+      pid = [int]$connection.OwningProcess
+      port = [int]$connection.LocalPort
+      command_line = [string]$process.CommandLine
+    }
+  }
+}
+$rows | ConvertTo-Json -Compress
+"""
+    try:
+        result = subprocess.run(  # noqa: S603
+            ["powershell", "-NoProfile", "-Command", script],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0 or not result.stdout.strip():
+        return []
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return []
+    rows = payload if isinstance(payload, list) else [payload]
+    candidates: list[_ServerProcess] = []
+    for row in rows:
+        command_line = str(row.get("command_line") or "")
+        restart_args = _restart_args_for_command(command_line, int(row.get("port", 0)))
+        if restart_args:
+            candidates.append(
+                _ServerProcess(
+                    pid=int(row["pid"]),
+                    port=int(row["port"]),
+                    command_line=command_line,
+                    restart_args=restart_args,
+                )
+            )
+    return candidates
+
+
+def _restart_args_for_command(command_line: str, port: int) -> tuple[str, ...] | None:
+    if "wetbulb_pipeline" in command_line and "dash" in command_line:
+        data_match = re.search(r"--data\s+([^\s]+)", command_line)
+        data_dir = data_match.group(1) if data_match else "web/public/data"
+        return (
+            sys.executable,
+            "-m",
+            "wetbulb_pipeline",
+            "dash",
+            "--data",
+            data_dir,
+            "--port",
+            str(port),
+        )
+    if "http.server" in command_line:
+        directory_match = re.search(r"--directory\s+([^\s]+)", command_line)
+        directory = directory_match.group(1) if directory_match else "site"
+        return (sys.executable, "-m", "http.server", str(port), "--directory", directory)
+    return None
 
 
 def _sync_dwd(
