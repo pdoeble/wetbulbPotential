@@ -48,7 +48,12 @@ locations:
         encoding="utf-8",
     )
 
-    def missing_download(station_id: str, year: int, destination_dir: str | Path) -> None:
+    def missing_download(
+        station_id: str,
+        year: int,
+        destination_dir: str | Path,
+        reporthook=None,
+    ) -> None:
         marker = noaa.missing_marker_path(station_id, year, destination_dir)
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("404 Not Found\n", encoding="utf-8")
@@ -70,3 +75,42 @@ locations:
     with sqlite3.connect(raw_db) as conn:
         observation_count = conn.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
     assert observation_count == 0
+
+
+def test_update_reports_progress_when_callback_is_provided(tmp_path: Path) -> None:
+    config_path = tmp_path / "stations.yml"
+    raw_db = tmp_path / "raw.sqlite"
+    config_path.write_text(
+        """
+defaults:
+  year_start: 2002
+  year_end: 2002
+locations:
+  - id: dry-run-noaa
+    name: Dry Run NOAA
+    country: US
+    climate_label: test
+    latitude: 38.0
+    longitude: -122.0
+    elevation_m: 10
+    timezone: America/Los_Angeles
+    noaa:
+      station_id: "PROGRESS_TEST_STATION"
+""",
+        encoding="utf-8",
+    )
+    messages: list[str] = []
+
+    update_all(
+        config_path,
+        raw_db,
+        years=(2002, 2002),
+        sources=["noaa"],
+        export_after=False,
+        dry_run=True,
+        progress=messages.append,
+    )
+
+    assert any("Starting update" in message for message in messages)
+    assert any("[0001/0001] NOAA dry-run-noaa" in message for message in messages)
+    assert any("dry-run would import" in message for message in messages)

@@ -53,6 +53,13 @@ python -m wetbulb_pipeline update --sources noaa nasa
   `.missing` markiert und brechen den Lauf nicht ab.
 - NASA POWER wird pro Standort und Jahr geprueft.
 - Der Export aktualisiert `web/public/data/wetbulb_processed.sqlite` und `manifest.json`.
+- Der Standardexport enthaelt fuer GitHub Pages nur `delta_t_k`, damit die versionierte
+  Visualisierungsdatenbank unter dem GitHub-Limit von 100 MB bleibt.
+- Fuer lokale Analysen mit allen Metriken kann ein groesserer Export erzeugt werden:
+
+```bash
+python -m wetbulb_pipeline export --metrics all --max-mb 250
+```
 
 ## Statische Seite
 

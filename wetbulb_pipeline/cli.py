@@ -11,7 +11,7 @@ from .database import (
     upsert_locations,
     upsert_observations,
 )
-from .export import export_processed
+from .export import DEFAULT_EXPORT_METRICS, METRICS, export_processed
 from .importers import dwd, nasa, noaa
 from .site import build_site
 from .sync import update_all
@@ -59,6 +59,13 @@ def main(argv: list[str] | None = None) -> None:
     export_parser.add_argument("--processed-db", default="web/public/data/wetbulb_processed.sqlite")
     export_parser.add_argument("--manifest", default="web/public/data/manifest.json")
     export_parser.add_argument("--max-mb", type=float, default=100)
+    export_parser.add_argument(
+        "--metrics",
+        nargs="+",
+        choices=[*METRICS.keys(), "all"],
+        default=list(DEFAULT_EXPORT_METRICS),
+        help="Metrics to export for Pages. Use 'all' for a larger local analysis database.",
+    )
 
     build_demo_parser = subparsers.add_parser("build-demo")
     build_demo_parser.add_argument("--db", default=DEFAULT_RAW_DB)
@@ -78,8 +85,16 @@ def main(argv: list[str] | None = None) -> None:
     )
     update_parser.add_argument("--processed-db", default="web/public/data/wetbulb_processed.sqlite")
     update_parser.add_argument("--manifest", default="web/public/data/manifest.json")
+    update_parser.add_argument(
+        "--metrics",
+        nargs="+",
+        choices=[*METRICS.keys(), "all"],
+        default=list(DEFAULT_EXPORT_METRICS),
+        help="Metrics to export after update. Use 'all' for a larger local analysis database.",
+    )
     update_parser.add_argument("--dry-run", action="store_true")
     update_parser.add_argument("--no-export", action="store_true")
+    update_parser.add_argument("--quiet", action="store_true")
 
     site_parser = subparsers.add_parser("site")
     site_parser.add_argument("--data", default="web/public/data")
@@ -103,6 +118,7 @@ def main(argv: list[str] | None = None) -> None:
             args.processed_db,
             args.manifest,
             max_bytes=int(args.max_mb * 1024 * 1024),
+            metrics=_normalize_metrics(args.metrics),
         )
     elif args.command == "build-demo":
         _init_db(args.db, args.config)
@@ -123,13 +139,16 @@ def main(argv: list[str] | None = None) -> None:
             export_after=not args.no_export,
             processed_db=args.processed_db,
             manifest_path=args.manifest,
+            export_metrics=_normalize_metrics(args.metrics),
             dry_run=args.dry_run,
+            progress=None if args.quiet else _print_progress,
         )
         for result in results:
             status = "skip" if result.skipped else "sync"
             print(
                 f"{status}\t{result.source}\t{result.location_id}\t"
-                f"{result.imported}\t{result.input_ref}"
+                f"{result.imported}\t{result.input_ref}",
+                flush=True,
             )
     elif args.command == "site":
         build_site(args.data, args.out)
@@ -198,3 +217,13 @@ def _import_observations(
         count = upsert_observations(conn, observations, batch_id)
         conn.commit()
     print(f"Imported {count} observations for {location.id}")
+
+
+def _print_progress(message: str) -> None:
+    print(message, flush=True)
+
+
+def _normalize_metrics(metrics: list[str]) -> list[str]:
+    if "all" in metrics:
+        return list(METRICS)
+    return metrics

@@ -65,6 +65,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     index = (out / "index.html").read_text(encoding="utf-8")
 
     assert data["defaults"]["plotType"] == "combined"
+    assert data["defaults"]["source"] == "NASA_POWER"
     assert data["defaults"]["fontFamily"] == "Times New Roman"
     assert data["defaults"]["figureWidth"] == 500
     assert data["defaults"]["figureHeight"] == 400
@@ -91,6 +92,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert "selectLocationFromMap" in index
     assert "plotly_click" in index
     assert "scattergeo" in index
+    assert "exportPlotSvg" in index
     assert all("latitude" in location and "longitude" in location for location in data["locations"])
     for control in [
         "Data source",
@@ -125,6 +127,8 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
     assert [trace.type for trace in figure.data] == ["contour"]
     assert figure.data[0].contours.coloring == "heatmap"
     assert figure.data[0].contours.showlines is True
+    assert figure.layout.margin.b >= 90
+    assert figure.layout.annotations[0].y <= -0.3
 
 
 def test_dash_location_map_uses_locations_and_selection() -> None:

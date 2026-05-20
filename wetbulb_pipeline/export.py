@@ -7,6 +7,8 @@ from pathlib import Path
 
 from .database import PROCESSED_SCHEMA, connect, init_raw_db
 
+DEFAULT_EXPORT_METRICS = ("delta_t_k",)
+
 METRICS = {
     "delta_t_k": {
         "label": "Delta T dry bulb - wet bulb",
@@ -76,14 +78,19 @@ def export_processed(
     processed_db: str | Path = "web/public/data/wetbulb_processed.sqlite",
     manifest_path: str | Path = "web/public/data/manifest.json",
     max_bytes: int = 100 * 1024 * 1024,
+    metrics: list[str] | tuple[str, ...] | None = DEFAULT_EXPORT_METRICS,
 ) -> None:
+    selected_metrics = _selected_metrics(metrics)
     processed_path = Path(processed_db)
     processed_path.parent.mkdir(parents=True, exist_ok=True)
-    if processed_path.exists():
-        processed_path.unlink()
+    temp_path = processed_path.with_name(f"{processed_path.name}.tmp")
+    if temp_path.exists():
+        temp_path.unlink()
 
     init_raw_db(raw_db)
-    with connect(raw_db) as raw, sqlite3.connect(processed_path) as processed:
+    raw = connect(raw_db)
+    processed = sqlite3.connect(temp_path)
+    try:
         processed.row_factory = sqlite3.Row
         processed.executescript(PROCESSED_SCHEMA)
         location_columns = ", ".join(LOCATION_COLUMNS)
@@ -98,7 +105,8 @@ def export_processed(
                 """
             ).fetchall(),
         )
-        for metric, info in METRICS.items():
+        for metric in selected_metrics:
+            info = METRICS[metric]
             processed.executemany(
                 """
                 INSERT INTO aggregates (
@@ -129,25 +137,46 @@ def export_processed(
                 ).fetchall(),
             )
         processed.commit()
+    finally:
+        processed.close()
+        raw.close()
 
-    size = processed_path.stat().st_size
+    size = temp_path.stat().st_size
     if size > max_bytes:
-        table_sizes = _estimate_table_sizes(processed_path)
-        processed_path.unlink(missing_ok=True)
+        table_sizes = _estimate_table_sizes(temp_path)
+        temp_path.unlink(missing_ok=True)
         raise RuntimeError(
             f"Processed database exceeds {max_bytes} bytes ({size} bytes). "
             f"Largest tables: {table_sizes}"
         )
 
-    manifest = build_manifest(processed_path, size)
+    manifest = build_manifest(temp_path, size, selected_metrics)
+    try:
+        os.replace(temp_path, processed_path)
+    except PermissionError as exc:
+        raise RuntimeError(
+            f"Cannot replace processed database {processed_path}; it is locked by "
+            "another process. Close local Dash/static servers or SQLite viewers that "
+            "use this file, then rerun `python -m wetbulb_pipeline export`."
+        ) from exc
+
     manifest_file = Path(manifest_path)
     manifest_file.parent.mkdir(parents=True, exist_ok=True)
-    manifest_file.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    manifest_file.write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
-def build_manifest(processed_db: str | Path, db_size_bytes: int | None = None) -> dict:
+def build_manifest(
+    processed_db: str | Path,
+    db_size_bytes: int | None = None,
+    metrics: list[str] | tuple[str, ...] | None = None,
+) -> dict:
     db_path = Path(processed_db)
-    with sqlite3.connect(db_path) as conn:
+    conn = sqlite3.connect(db_path)
+    try:
         conn.row_factory = sqlite3.Row
         locations = [dict(row) for row in conn.execute("SELECT * FROM locations ORDER BY name")]
         availability = [
@@ -162,6 +191,9 @@ def build_manifest(processed_db: str | Path, db_size_bytes: int | None = None) -
                 """
             )
         ]
+    finally:
+        conn.close()
+    selected_metrics = _selected_metrics(metrics or [item["metric"] for item in availability])
     return {
         "version": 1,
         "generated_from": "wetbulb_pipeline",
@@ -173,7 +205,8 @@ def build_manifest(processed_db: str | Path, db_size_bytes: int | None = None) -
         "availability": availability,
         "metrics": [
             {"id": metric, "label": info["label"], "unit": info["unit"]}
-            for metric, info in METRICS.items()
+            for metric in selected_metrics
+            for info in [METRICS[metric]]
         ],
         "plot_types": [
             {"id": "heatmap", "label": "Heatmap"},
@@ -203,8 +236,17 @@ def build_manifest(processed_db: str | Path, db_size_bytes: int | None = None) -
     }
 
 
+def _selected_metrics(metrics: list[str] | tuple[str, ...] | None) -> list[str]:
+    requested = list(metrics or DEFAULT_EXPORT_METRICS)
+    unknown = [metric for metric in requested if metric not in METRICS]
+    if unknown:
+        raise ValueError(f"Unknown export metric(s): {', '.join(unknown)}")
+    return [metric for metric in METRICS if metric in set(requested)]
+
+
 def _estimate_table_sizes(path: Path) -> list[tuple[str, int]]:
-    with sqlite3.connect(path) as conn:
+    conn = sqlite3.connect(path)
+    try:
         rows = conn.execute(
             """
             SELECT name, COUNT(*) AS rows
@@ -213,4 +255,6 @@ def _estimate_table_sizes(path: Path) -> list[tuple[str, int]]:
             GROUP BY name
             """
         ).fetchall()
+    finally:
+        conn.close()
     return [(str(row[0]), int(row[1])) for row in rows]

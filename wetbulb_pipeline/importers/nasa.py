@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlencode
@@ -43,16 +44,18 @@ def download_range(
     end: str,
     destination_dir: str | Path,
     time_standard: str = "UTC",
+    reporthook: Callable[[int, int, int], None] | None = None,
 ) -> Path:
     destination = Path(destination_dir)
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / f"{location.id}_{start}_{end}_{time_standard}.csv"
     if target.exists() and target.stat().st_size > 0:
         return target
-    urlretrieve(
-        build_power_url(location.latitude, location.longitude, start, end, time_standard),
-        target,
-    )
+    url = build_power_url(location.latitude, location.longitude, start, end, time_standard)
+    if reporthook is None:
+        urlretrieve(url, target)
+    else:
+        urlretrieve(url, target, reporthook=reporthook)
     return target
 
 

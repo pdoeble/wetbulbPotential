@@ -121,9 +121,6 @@ CREATE TABLE aggregates (
   max REAL NOT NULL,
   PRIMARY KEY (source, location_id, metric, year, month, hour_local)
 );
-
-CREATE INDEX idx_aggregates_filter
-ON aggregates (source, location_id, metric, year);
 """
 
 LOCATION_EXTRA_COLUMNS = {

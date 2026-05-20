@@ -40,7 +40,41 @@ def test_import_is_idempotent_and_export_writes_manifest(tmp_path: Path) -> None
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["database"]["path"] == "data/wetbulb_processed.sqlite"
     assert any(location["id"] == "stuttgart-neckartal" for location in manifest["locations"])
+    assert [metric["id"] for metric in manifest["metrics"]] == ["delta_t_k"]
 
     with sqlite3.connect(processed_db) as conn:
         aggregate_count = conn.execute("SELECT COUNT(*) FROM aggregates").fetchone()[0]
+        exported_metrics = [
+            row[0] for row in conn.execute("SELECT DISTINCT metric FROM aggregates ORDER BY metric")
+        ]
     assert aggregate_count > 0
+    assert exported_metrics == ["delta_t_k"]
+
+
+def test_export_can_include_all_metrics_for_local_analysis(tmp_path: Path) -> None:
+    raw_db = tmp_path / "raw.sqlite"
+    processed_db = tmp_path / "processed.sqlite"
+    manifest_path = tmp_path / "manifest.json"
+    location = get_location("stuttgart-neckartal")
+    observations = read_observations("produkt_tf_stunde_20021101_20130514_04926.txt", location)[:24]
+
+    init_raw_db(raw_db)
+    with connect(raw_db) as conn:
+        upsert_locations(conn, load_locations())
+        batch = create_import_batch(conn, "DWD", location.id, "fixture")
+        upsert_observations(conn, observations, batch)
+        conn.commit()
+
+    export_processed(
+        raw_db,
+        processed_db,
+        manifest_path,
+        metrics=["delta_t_k", "dry_bulb_c", "wet_bulb_c"],
+    )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert [metric["id"] for metric in manifest["metrics"]] == [
+        "delta_t_k",
+        "dry_bulb_c",
+        "wet_bulb_c",
+    ]

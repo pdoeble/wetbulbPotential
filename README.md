@@ -52,6 +52,10 @@ Die Daten werden als 12 x 24 Matrix ausgewertet:
 
 ## Metriken
 
+Der versionierte GitHub-Pages-Datensatz exportiert standardmaessig `Delta T dry bulb - wet bulb`,
+damit die Visualisierungsdatenbank unter dem GitHub-Limit von 100 MB bleibt. Die Pipeline kann fuer
+lokale Analysen weiterhin alle Metriken exportieren.
+
 | Metrik | Bedeutung | Einheit |
 | --- | --- | --- |
 | Delta T dry bulb - wet bulb | Lufttemperatur minus Feuchtkugeltemperatur | K |
@@ -160,6 +164,19 @@ pro Quelle, Standort und Jahr, was schon vorhanden ist, und laedt nur fehlende J
 Der Fill-run ist die passende Wahl fuer eine leere Maschine oder eine neu angelegte RAW-Datenbank.
 Falls NOAA fuer eine Station/Jahr-Kombination kein CSV bereitstellt, wird dies als `.missing`
 vermerkt und der Lauf setzt mit den naechsten Daten fort.
+
+Der Standardexport fuer Pages ist bewusst klein:
+
+```bash
+python -m wetbulb_pipeline export
+```
+
+Ein lokaler Voll-Export mit allen Metriken ist moeglich, aber nicht fuer den Commit nach GitHub
+Pages gedacht:
+
+```bash
+python -m wetbulb_pipeline export --metrics all --max-mb 250
+```
 
 ## Hinweise Zur Interpretation
 

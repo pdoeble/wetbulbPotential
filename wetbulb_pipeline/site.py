@@ -41,7 +41,7 @@ def _index_html() -> str:
       main {
         min-height: 100vh;
         display: grid;
-        grid-template-rows: auto auto minmax(460px, 1fr) auto;
+        grid-template-rows: auto auto auto auto;
         gap: 14px;
         padding: 14px;
       }
@@ -55,11 +55,11 @@ def _index_html() -> str:
         font-size: 13px;
       }
       .source-box a { color: #174ea6; }
-      .control-map-grid {
+      .visualization-grid {
         display: grid;
-        grid-template-columns: minmax(460px, 1fr) minmax(320px, 440px);
+        grid-template-columns: minmax(340px, 0.85fr) minmax(520px, 1.15fr);
         gap: 14px;
-        align-items: start;
+        align-items: stretch;
       }
       .settings {
         padding: 10px;
@@ -69,7 +69,7 @@ def _index_html() -> str:
         align-items: start;
       }
       .map-panel {
-        height: 360px;
+        min-height: 460px;
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
@@ -82,8 +82,8 @@ def _index_html() -> str:
       }
       #locationMap {
         width: 100%;
-        height: 320px;
-        min-height: 0;
+        height: 100%;
+        min-height: 420px;
       }
       .panel {
         border: 1px solid #d9e0ea;
@@ -130,6 +130,7 @@ def _index_html() -> str:
       }
       .figure-area {
         overflow: hidden;
+        min-height: 460px;
       }
       #plot { width: 100%; min-height: 460px; }
       .method {
@@ -139,7 +140,7 @@ def _index_html() -> str:
       }
       .method strong { color: #17202e; }
       @media (max-width: 980px) {
-        .control-map-grid {
+        .visualization-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -154,16 +155,16 @@ def _index_html() -> str:
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
-      <section class="control-map-grid">
-        <aside class="settings" id="settings"></aside>
+      <section class="visualization-grid">
         <section class="map-panel">
           <h2>Locations</h2>
           <div id="locationMap"></div>
         </section>
+        <section class="figure-area">
+          <div id="plot"></div>
+        </section>
       </section>
-      <section class="figure-area">
-        <div id="plot"></div>
-      </section>
+      <aside class="settings" id="settings"></aside>
       <div class="method" id="methodBox"></div>
     </main>
     <script>
@@ -220,14 +221,7 @@ def _index_html() -> str:
           const button = document.createElement('button');
           button.id = control.id;
           button.textContent = control.label;
-          button.addEventListener('click', () => {
-            Plotly.downloadImage('plot', {
-              format: 'svg',
-              filename: 'wetbulb-potential',
-              width: Number(state.figureWidth),
-              height: Number(state.figureHeight)
-            });
-          });
+          button.addEventListener('click', exportPlotSvg);
           return button;
         }
         const label = document.createElement('label');
@@ -424,6 +418,18 @@ def _index_html() -> str:
         });
       }
 
+      function exportPlotSvg() {
+        const root = document.getElementById('plot');
+        const plot = root?.querySelector('.js-plotly-plot') || root;
+        if (!plot || !window.Plotly) return;
+        Plotly.downloadImage(plot, {
+          format: 'svg',
+          filename: 'wetbulb-potential',
+          width: Number(state.figureWidth) || 500,
+          height: Number(state.figureHeight) || 400
+        });
+      }
+
       function buildMatrix() {
         const weighted = MONTHS.map(() => HOURS.map(() => 0));
         const counts = MONTHS.map(() => HOURS.map(() => 0));
@@ -559,13 +565,13 @@ def _index_html() -> str:
             linecolor: '#000000',
             zeroline: false
           },
-          margin: { l: 70, r: 55, t: state.showTitle ? 55 : 20, b: 60 },
+          margin: { l: 70, r: 55, t: state.showTitle ? 55 : 20, b: 112 },
           annotations: [{
             text: `${selectedLocation().name} · ${state.source} · ${metric.label} [${metric.unit}] · ${state.yearStart}-${state.yearEnd}`,
             xref: 'paper',
             yref: 'paper',
             x: 0,
-            y: -0.18,
+            y: -0.44,
             showarrow: false,
             xanchor: 'left',
             font: { size: Math.max(10, Number(state.legendFontSize) - 2), color: '#4a5870' }

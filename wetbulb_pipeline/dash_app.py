@@ -13,6 +13,8 @@ COLORSCALE = [
     [0.75, "#ec8f3c"],
     [1, "#a83232"],
 ]
+PLOT_BOTTOM_MARGIN = 112
+PLOT_FOOTNOTE_Y = -0.44
 
 
 def create_dash_app(data_dir: str = "web/public/data"):
@@ -44,17 +46,6 @@ def create_dash_app(data_dir: str = "web/public/data"):
             ),
             html.Section(
                 [
-                    html.Aside(
-                        _settings_layout(app_data),
-                        className="settings",
-                        style={
-                            **_box_style(),
-                            "display": "grid",
-                            "gridTemplateColumns": "repeat(auto-fit, minmax(190px, 1fr))",
-                            "gap": "10px",
-                            "padding": "10px",
-                        },
-                    ),
                     html.Section(
                         [
                             html.H2(
@@ -68,44 +59,57 @@ def create_dash_app(data_dir: str = "web/public/data"):
                             dcc.Graph(
                                 id="locationMap",
                                 config={"displayModeBar": False},
-                                style={"width": "100%", "height": "320px"},
+                                style={"width": "100%", "height": "100%", "minHeight": "420px"},
                             ),
                         ],
                         className="map-panel",
                         style={
                             **_box_style(),
-                            "height": "360px",
+                            "minHeight": "460px",
                             "display": "grid",
                             "gridTemplateRows": "auto minmax(0, 1fr)",
                             "overflow": "hidden",
                         },
                     ),
-                ],
-                className="control-map-grid",
-                style={
-                    "display": "grid",
-                    "gridTemplateColumns": "minmax(460px, 1fr) minmax(320px, 440px)",
-                    "gap": "14px",
-                    "alignItems": "start",
-                },
-            ),
-            html.Section(
-                [
-                    dcc.Graph(
-                        id="plot",
-                        config={
-                            "displaylogo": False,
-                            "toImageButtonOptions": {
-                                "format": "svg",
-                                "filename": "wetbulb-potential",
-                                "width": defaults["figureWidth"],
-                                "height": defaults["figureHeight"],
-                            },
-                        },
+                    html.Section(
+                        [
+                            dcc.Graph(
+                                id="plot",
+                                config={
+                                    "displaylogo": False,
+                                    "toImageButtonOptions": {
+                                        "format": "svg",
+                                        "filename": "wetbulb-potential",
+                                        "width": defaults["figureWidth"],
+                                        "height": defaults["figureHeight"],
+                                    },
+                                },
+                                style={"width": "100%", "minHeight": "460px"},
+                            ),
+                        ],
+                        className="figure-area",
+                        style={**_box_style(), "overflow": "hidden", "minHeight": "460px"},
                     ),
                 ],
-                className="figure-area",
-                style=_box_style(),
+                className="visualization-grid",
+                style={
+                    "display": "grid",
+                    "gridTemplateColumns": "minmax(340px, 0.85fr) minmax(520px, 1.15fr)",
+                    "gap": "14px",
+                    "alignItems": "stretch",
+                },
+            ),
+            html.Aside(
+                _settings_layout(app_data),
+                className="settings",
+                style={
+                    **_box_style(),
+                    "display": "grid",
+                    "gridTemplateColumns": "repeat(auto-fit, minmax(190px, 1fr))",
+                    "gap": "10px",
+                    "padding": "10px",
+                    "alignItems": "start",
+                },
             ),
             html.Div(
                 [
@@ -118,11 +122,12 @@ def create_dash_app(data_dir: str = "web/public/data"):
                 className="method",
                 style={**_box_style(), "padding": "12px", "fontSize": "13px"},
             ),
+            html.Div(id="exportStatus", style={"display": "none"}),
         ],
         className="dash-app",
         style={
             "display": "grid",
-            "gridTemplateRows": "auto auto minmax(460px, 1fr) auto",
+            "gridTemplateRows": "auto auto auto auto",
             "gap": "14px",
             "padding": "14px",
             "background": "#f5f7fa",
@@ -224,6 +229,33 @@ def create_dash_app(data_dir: str = "web/public/data"):
         )
         settings["showTitle"] = "Show title" in (settings["showTitle"] or [])
         return build_dash_figure(app_data, settings)
+
+    app.clientside_callback(
+        """
+        function(nClicks, width, height) {
+            if (!nClicks) {
+                return window.dash_clientside.no_update;
+            }
+            const root = document.getElementById('plot');
+            const plot = root && (root.querySelector('.js-plotly-plot') || root);
+            if (!window.Plotly || !plot) {
+                return 'missing-plot';
+            }
+            Plotly.downloadImage(plot, {
+                format: 'svg',
+                filename: 'wetbulb-potential',
+                width: Number(width) || 500,
+                height: Number(height) || 400
+            });
+            return String(nClicks);
+        }
+        """,
+        Output("exportStatus", "children"),
+        Input("exportSvg", "n_clicks"),
+        State("figureWidth", "value"),
+        State("figureHeight", "value"),
+        prevent_initial_call=True,
+    )
 
     return app
 
@@ -412,7 +444,12 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
             "linecolor": "black",
             "zeroline": False,
         },
-        margin={"l": 70, "r": 55, "t": 55 if settings["showTitle"] else 20, "b": 60},
+        margin={
+            "l": 70,
+            "r": 55,
+            "t": 55 if settings["showTitle"] else 20,
+            "b": PLOT_BOTTOM_MARGIN,
+        },
         annotations=[
             {
                 "text": (
@@ -423,7 +460,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 "xref": "paper",
                 "yref": "paper",
                 "x": 0,
-                "y": -0.18,
+                "y": PLOT_FOOTNOTE_Y,
                 "showarrow": False,
                 "xanchor": "left",
                 "font": {"size": max(10, int(settings["legendFontSize"]) - 2), "color": "#4a5870"},

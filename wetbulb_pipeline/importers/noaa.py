@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import HTTPError
@@ -27,7 +28,12 @@ def missing_marker_path(station_id: str, year: int, destination_dir: str | Path)
     return Path(destination_dir) / f"{station_id}_{year}.missing"
 
 
-def download_year(station_id: str, year: int, destination_dir: str | Path) -> Path | None:
+def download_year(
+    station_id: str,
+    year: int,
+    destination_dir: str | Path,
+    reporthook: Callable[[int, int, int], None] | None = None,
+) -> Path | None:
     destination = Path(destination_dir)
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / f"{station_id}_{year}.csv"
@@ -38,7 +44,10 @@ def download_year(station_id: str, year: int, destination_dir: str | Path) -> Pa
         return None
     url = build_year_url(station_id, year)
     try:
-        urlretrieve(url, target)
+        if reporthook is None:
+            urlretrieve(url, target)
+        else:
+            urlretrieve(url, target, reporthook=reporthook)
     except HTTPError as exc:
         if exc.code == 404:
             target.unlink(missing_ok=True)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -208,7 +209,18 @@ def build_visualization_data(data_dir: str | Path) -> dict[str, Any]:
 
 
 def _preferred_availability(availability: list[dict[str, Any]]) -> dict[str, Any] | None:
-    for item in availability:
-        if item["metric"] == "delta_t_k":
-            return item
-    return availability[0] if availability else None
+    candidates = [item for item in availability if item["metric"] == "delta_t_k"] or availability
+    if not candidates:
+        return None
+    source_location_counts = Counter(
+        (item["source"], item["location_id"]) for item in candidates
+    )
+    source_counts = Counter(source for source, _location in source_location_counts)
+    return max(
+        candidates,
+        key=lambda item: (
+            source_counts[item["source"]],
+            int(item["cells"]),
+            int(item["year_max"]) - int(item["year_min"]),
+        ),
+    )
