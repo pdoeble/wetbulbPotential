@@ -70,7 +70,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert data["defaults"]["figureTitle"] == "Wetbulb Potential"
     assert "Climatology" not in data["defaults"]["figureTitle"]
     assert data["defaults"]["cmin"] == 0
-    assert data["defaults"]["cmax"] == 25
+    assert data["defaults"]["cmax"] == 16
     assert data["defaults"]["fontFamily"] == "Times New Roman"
     assert data["defaults"]["figureWidth"] == 500
     assert data["defaults"]["figureHeight"] == 400
@@ -82,6 +82,8 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert data["defaults"]["showTitle"] is True
     assert data["defaults"]["showContourLabels"] is True
     assert data["defaults"]["isolineCount"] == 10
+    assert data["defaults"]["mapPreset"] == "world"
+    assert data["defaults"]["mapViewport"] == "[-180,180,-90,90]"
     default_availability = availability_for_selection(
         data,
         data["defaults"]["source"],
@@ -100,7 +102,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert "contourSettings" in index
     assert "coloring: 'none'" in index
 
-    for panel in ["Data", "Plot", "Figure & Export"]:
+    for panel in ["Data", "Plot", "Map", "Figure & Export"]:
         assert panel in index
     assert "Locations" in index
     assert 'id="locationMap"' in index
@@ -113,6 +115,17 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert "Export map SVG" in index
     assert "wetbulb-location-map" in index
     assert "scrollZoom: true" in index
+    assert "Map viewport [lon_min,lon_max,lat_min,lat_max]" in index
+    assert "Map preset" in index
+    assert "Europe" in index
+    assert "North America" in index
+    assert "Middle East" in index
+    assert "Asia (India to Japan)" in index
+    assert "MAP_VIEWPORT_PRESETS" in index
+    assert "asia_india_japan" in index
+    assert "formatMapViewportFromLayout" in index
+    assert "geoFromViewportText" in index
+    assert "uirevision: 'location-map'" in index
     assert "<strong>${location.name}</strong>" not in index
     assert "refreshDependentOptions(true)" in index
     assert "availableYears(resetYearRange = false)" in index
@@ -134,6 +147,8 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Isoline count",
         "cmin",
         "cmax",
+        "Map preset",
+        "Map viewport [lon_min,lon_max,lat_min,lat_max]",
         "Figure title",
         "Font family",
         "Figure width [px]",
@@ -157,7 +172,7 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
 
     assert [trace.type for trace in figure.data] == ["heatmap", "contour"]
     assert figure.data[0].zmin == 0
-    assert figure.data[0].zmax == 25
+    assert figure.data[0].zmax == 16
     assert figure.data[1].zmin is None
     assert figure.data[1].zmax is None
     assert figure.data[1].autocontour is False
@@ -189,7 +204,14 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
         if location["id"] == app_data["defaults"]["location"]
     )
     assert selected_location["name"] in figure.layout.title.text
-    assert selected_location["name"] in figure.layout.annotations[0].text
+    assert selected_location["country"] in figure.layout.title.text
+    assert "<br>" in figure.layout.title.text
+    assert figure.data[0].colorbar.title.text == "ΔT [K]"
+    assert figure.data[0].colorbar.title.side == "right"
+    assert figure.layout.annotations[0].text == (
+        f"Data Source: {app_data['defaults']['source']} "
+        f"{app_data['defaults']['yearStart']}-{app_data['defaults']['yearEnd']}"
+    )
     assert figure.layout.margin.b >= 90
     assert figure.layout.annotations[0].y <= -0.3
 
@@ -207,6 +229,7 @@ def test_dash_location_map_uses_locations_and_selection() -> None:
     assert all("<strong>" not in text for text in figure.data[0].text)
     assert "#b3261e" in list(figure.data[0].marker.color)
     assert figure.layout.geo.scope == "world"
+    assert figure.layout.uirevision == "location-map"
 
 
 def test_dash_location_click_prefers_available_current_metric() -> None:

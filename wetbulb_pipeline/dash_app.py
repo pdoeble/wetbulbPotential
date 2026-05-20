@@ -165,6 +165,7 @@ def create_dash_app(data_dir: str = "web/public/data"):
             ),
             html.Div(id="exportStatus", style={"display": "none"}),
             html.Div(id="exportMapStatus", style={"display": "none"}),
+            html.Div(id="mapViewportStatus", style={"display": "none"}),
         ],
         className="dash-app",
         style={
@@ -347,6 +348,132 @@ def create_dash_app(data_dir: str = "web/public/data"):
         prevent_initial_call=True,
     )
 
+    app.clientside_callback(
+        """
+        function(relayoutData, preset, currentValue) {
+            const noUpdate = window.dash_clientside.no_update;
+            const triggered = window.dash_clientside.callback_context.triggered[0];
+            const triggerId = triggered && triggered.prop_id ? triggered.prop_id.split('.')[0] : '';
+            if (triggerId === 'mapPreset') {
+                const presetValue = mapViewportPresets()[preset];
+                if (!presetValue || presetValue === currentValue) {
+                    return [noUpdate, noUpdate];
+                }
+                return [presetValue, preset];
+            }
+            if (!relayoutData || window.__wetbulbApplyingMapViewport) {
+                return [noUpdate, noUpdate];
+            }
+            if (window.__wetbulbSuppressNextMapViewportSync) {
+                window.__wetbulbSuppressNextMapViewportSync = false;
+                return [noUpdate, noUpdate];
+            }
+            const root = document.getElementById('locationMap');
+            const map = root && (root.querySelector('.js-plotly-plot') || root);
+            const geo = map && map._fullLayout && map._fullLayout.geo;
+            if (!geo) {
+                return [noUpdate, noUpdate];
+            }
+            const value = formatMapViewport(geo);
+            if (!value || value === currentValue) {
+                return [noUpdate, noUpdate];
+            }
+            window.__wetbulbSkippingMapViewportApply = true;
+            return [value, 'custom'];
+
+            function mapViewportPresets() {
+                return {
+                    world: '[-180,180,-90,90]',
+                    europe: '[-12,35,34,72]',
+                    north_america: '[-170,-50,5,75]',
+                    middle_east: '[25,65,10,42]',
+                    asia_india_japan: '[65,150,0,50]'
+                };
+            }
+
+            function formatMapViewport(geoLayout) {
+                const scale = Number(geoLayout.projection && geoLayout.projection.scale) || 1;
+                const center = geoLayout.center || {};
+                const centerLon = Number(center.lon) || 0;
+                const centerLat = Number(center.lat) || 0;
+                const lonSpan = 360 / Math.max(1, scale);
+                const latSpan = 180 / Math.max(1, scale);
+                const lonMin = clamp(centerLon - lonSpan / 2, -180, 180);
+                const lonMax = clamp(centerLon + lonSpan / 2, -180, 180);
+                const latMin = clamp(centerLat - latSpan / 2, -90, 90);
+                const latMax = clamp(centerLat + latSpan / 2, -90, 90);
+                return `[${[lonMin, lonMax, latMin, latMax].map(formatNumber).join(',')}]`;
+            }
+            function clamp(value, minValue, maxValue) {
+                return Math.min(maxValue, Math.max(minValue, value));
+            }
+            function formatNumber(value) {
+                return Number(value.toFixed(4)).toString();
+            }
+        }
+        """,
+        [Output("mapViewport", "value"), Output("mapPreset", "value")],
+        [Input("locationMap", "relayoutData"), Input("mapPreset", "value")],
+        State("mapViewport", "value"),
+        prevent_initial_call=True,
+    )
+
+    app.clientside_callback(
+        """
+        function(value) {
+            if (window.__wetbulbSkippingMapViewportApply) {
+                window.__wetbulbSkippingMapViewportApply = false;
+                return window.dash_clientside.no_update;
+            }
+            const root = document.getElementById('locationMap');
+            const map = root && (root.querySelector('.js-plotly-plot') || root);
+            if (!window.Plotly || !map) {
+                return 'missing-map';
+            }
+            const relayout = relayoutFromViewport(value);
+            if (!relayout) {
+                return 'invalid-map-viewport';
+            }
+            window.__wetbulbApplyingMapViewport = true;
+            window.__wetbulbSuppressNextMapViewportSync = true;
+            Plotly.relayout(map, relayout).then(function() {
+                window.__wetbulbApplyingMapViewport = false;
+            }).catch(function(error) {
+                window.__wetbulbApplyingMapViewport = false;
+            });
+            return value || '';
+
+            function relayoutFromViewport(text) {
+                const values = parseViewport(text);
+                if (!values) return null;
+                const lonMin = values[0];
+                const lonMax = values[1];
+                const latMin = values[2];
+                const latMax = values[3];
+                const lonSpan = lonMax - lonMin;
+                const latSpan = latMax - latMin;
+                if (lonSpan <= 0 || latSpan <= 0) return null;
+                const scale = Math.min(25, Math.max(1, Math.min(360 / lonSpan, 180 / latSpan)));
+                return {
+                    'geo.center.lon': (lonMin + lonMax) / 2,
+                    'geo.center.lat': (latMin + latMax) / 2,
+                    'geo.projection.scale': scale
+                };
+            }
+            function parseViewport(text) {
+                const values = String(text || '').match(/-?\\d+(?:\\.\\d+)?/g);
+                if (!values || values.length !== 4) return null;
+                const parsed = values.map(Number);
+                if (parsed.some((value) => !Number.isFinite(value))) return null;
+                return parsed;
+            }
+        }
+        """,
+        Output("mapViewportStatus", "children"),
+        Input("mapViewport", "value"),
+        prevent_initial_call=True,
+    )
+
     return app
 
 
@@ -441,7 +568,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 y=MONTHS,
                 z=matrix,
                 colorscale=COLORSCALE,
-                colorbar={"title": {"text": metric["unit"]}},
+                colorbar=_colorbar(metric),
                 **color_limits,
                 hovertemplate=(
                     "Month %{y}<br>Hour %{x}:00<br>"
@@ -459,7 +586,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 y=MONTHS,
                 z=matrix,
                 colorscale=COLORSCALE,
-                colorbar={"title": {"text": metric["unit"]}},
+                colorbar=_colorbar(metric),
                 **color_limits,
                 hovertemplate=(
                     "Month %{y}<br>Hour %{x}:00<br>"
@@ -544,14 +671,13 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         margin={
             "l": 70,
             "r": 55,
-            "t": 55 if settings["showTitle"] else 20,
+            "t": 72 if settings["showTitle"] else 20,
             "b": PLOT_BOTTOM_MARGIN,
         },
         annotations=[
             {
                 "text": (
-                    f"{_location(app_data, settings['location'])['name']} · "
-                    f"{settings['source']} · {metric['label']} [{metric['unit']}] · "
+                    f"Data Source: {settings['source']} "
                     f"{settings['yearStart']}-{settings['yearEnd']}"
                 ),
                 "xref": "paper",
@@ -621,6 +747,7 @@ def build_location_map_figure(app_data: dict[str, Any], source: str, location_id
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
+        uirevision="location-map",
     )
     return fig
 
@@ -725,18 +852,33 @@ def _cell_value_trace(matrix: list[list[float | None]], settings: dict[str, Any]
 
 
 def _plot_title(app_data: dict[str, Any], settings: dict[str, Any]) -> str:
-    location_name = _location(app_data, settings["location"]).get("name", "")
+    location = _location(app_data, settings["location"])
+    location_name = location.get("name", "")
+    country = location.get("country", "")
+    location_line = ", ".join(part for part in (location_name, country) if part)
     base_title = str(settings.get("figureTitle") or "Wetbulb Potential").replace(
         "Climatology", ""
     )
     base_title = " ".join(base_title.split()).strip(" -")
-    if not location_name:
+    if not location_line:
         return base_title
     if not base_title:
-        return location_name
-    if location_name.casefold() in base_title.casefold():
+        return location_line
+    if location_line.casefold() in base_title.casefold():
         return base_title
-    return f"{location_name} - {base_title}"
+    return f"{location_line}<br>{base_title}"
+
+
+def _colorbar(metric: dict[str, Any]) -> dict[str, Any]:
+    return {"title": {"text": _colorbar_title(metric), "side": "right"}}
+
+
+def _colorbar_title(metric: dict[str, Any]) -> str:
+    if metric.get("id") == "delta_t_k":
+        return "ΔT [K]"
+    unit = metric.get("unit", "")
+    label = metric.get("label", "Value")
+    return f"{label} [{unit}]" if unit else label
 
 
 def _color_limits(settings: dict[str, Any]) -> dict[str, float]:

@@ -164,7 +164,8 @@ def _index_html() -> str:
       Show cell values Show isoline labels Isoline count cmin cmax Figure title Font family
       Figure width [px] Figure height [px] Base font size Title font size Axis title font size
       Tick font size Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
-      Locations Export map SVG
+      Locations Export map SVG Map Map preset World Europe North America Middle East
+      Asia (India to Japan) Custom Map viewport [lon_min,lon_max,lat_min,lat_max]
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
@@ -195,6 +196,13 @@ def _index_html() -> str:
         [0.75, '#ec8f3c'],
         [1, '#a83232']
       ];
+      const MAP_VIEWPORT_PRESETS = {
+        world: '[-180,180,-90,90]',
+        europe: '[-12,35,34,72]',
+        north_america: '[-170,-50,5,75]',
+        middle_east: '[25,65,10,42]',
+        asia_india_japan: '[65,150,0,50]'
+      };
 
       let appData;
       let state;
@@ -268,6 +276,25 @@ def _index_html() -> str:
         }
         if (control.options) fillOptions(input, control.options);
         input.addEventListener('input', () => {
+          if (control.id === 'mapPreset') {
+            state.mapPreset = input.value;
+            const presetViewport = MAP_VIEWPORT_PRESETS[state.mapPreset];
+            if (presetViewport) {
+              state.mapViewport = presetViewport;
+              const viewportInput = document.getElementById('mapViewport');
+              if (viewportInput) viewportInput.value = presetViewport;
+              applyMapViewportFromText();
+            }
+            return;
+          }
+          if (control.id === 'mapViewport') {
+            state.mapPreset = 'custom';
+            const presetInput = document.getElementById('mapPreset');
+            if (presetInput) presetInput.value = 'custom';
+            state.mapViewport = input.value;
+            applyMapViewportFromText();
+            return;
+          }
           state[control.id] = control.type === 'number'
             ? (input.value === '' ? null : Number(input.value))
             : input.value;
@@ -341,6 +368,7 @@ def _index_html() -> str:
       function updateLocationMap() {
         const map = document.getElementById('locationMap');
         if (!map || !appData.locations.length) return;
+        const geoLayout = mapGeoLayout();
         const currentSourceLocations = new Set(
           appData.availability
             .filter((item) => item.source === state.source)
@@ -369,23 +397,11 @@ def _index_html() -> str:
           },
           hovertemplate: '%{text}<extra></extra>'
         }], {
-          geo: {
-            scope: 'world',
-            projection: { type: 'natural earth' },
-            showframe: false,
-            showland: true,
-            landcolor: '#edf2f7',
-            showcountries: true,
-            countrycolor: '#c7d0dd',
-            showcoastlines: true,
-            coastlinecolor: '#b9c4d3',
-            showocean: true,
-            oceancolor: '#ffffff',
-            bgcolor: '#ffffff'
-          },
+          geo: geoLayout,
           margin: { l: 0, r: 0, t: 0, b: 0 },
           paper_bgcolor: '#ffffff',
-          plot_bgcolor: '#ffffff'
+          plot_bgcolor: '#ffffff',
+          uirevision: 'location-map'
         }, {
           responsive: true,
           scrollZoom: true,
@@ -398,6 +414,33 @@ def _index_html() -> str:
           });
           map.dataset.clickHandlerAttached = 'true';
         }
+        if (!map.dataset.relayoutHandlerAttached) {
+          map.on('plotly_relayout', () => updateMapViewportFromLayout());
+          map.dataset.relayoutHandlerAttached = 'true';
+        }
+      }
+
+      function mapGeoLayout() {
+        const geo = {
+          scope: 'world',
+          projection: { type: 'natural earth' },
+          showframe: false,
+          showland: true,
+          landcolor: '#edf2f7',
+          showcountries: true,
+          countrycolor: '#c7d0dd',
+          showcoastlines: true,
+          coastlinecolor: '#b9c4d3',
+          showocean: true,
+          oceancolor: '#ffffff',
+          bgcolor: '#ffffff'
+        };
+        const viewport = geoFromViewportText(state.mapViewport);
+        if (viewport) {
+          geo.center = viewport.center;
+          geo.projection = { ...geo.projection, scale: viewport.scale };
+        }
+        return geo;
       }
 
       function locationMapLabel(location) {
@@ -472,6 +515,88 @@ def _index_html() -> str:
         });
       }
 
+      function applyMapViewportFromText() {
+        const map = document.getElementById('locationMap');
+        if (!map || !window.Plotly) return;
+        const viewport = geoFromViewportText(state.mapViewport);
+        if (!viewport) return;
+        window.__wetbulbApplyingMapViewport = true;
+        window.__wetbulbSuppressNextMapViewportSync = true;
+        Plotly.relayout(map, {
+          'geo.center.lon': viewport.center.lon,
+          'geo.center.lat': viewport.center.lat,
+          'geo.projection.scale': viewport.scale
+        }).finally(() => {
+          window.__wetbulbApplyingMapViewport = false;
+        });
+      }
+
+      function updateMapViewportFromLayout() {
+        if (window.__wetbulbApplyingMapViewport) return;
+        if (window.__wetbulbSuppressNextMapViewportSync) {
+          window.__wetbulbSuppressNextMapViewportSync = false;
+          return;
+        }
+        const map = document.getElementById('locationMap');
+        const geo = map?._fullLayout?.geo;
+        if (!geo) return;
+        const value = formatMapViewportFromLayout(geo);
+        if (!value || value === state.mapViewport) return;
+        state.mapViewport = value;
+        state.mapPreset = 'custom';
+        const input = document.getElementById('mapViewport');
+        if (input && input.value !== value) input.value = value;
+        const presetInput = document.getElementById('mapPreset');
+        if (presetInput) presetInput.value = 'custom';
+      }
+
+      function formatMapViewportFromLayout(geo) {
+        const scale = Number(geo.projection?.scale) || 1;
+        const centerLon = Number(geo.center?.lon) || 0;
+        const centerLat = Number(geo.center?.lat) || 0;
+        const lonSpan = 360 / Math.max(1, scale);
+        const latSpan = 180 / Math.max(1, scale);
+        const bounds = [
+          clamp(centerLon - lonSpan / 2, -180, 180),
+          clamp(centerLon + lonSpan / 2, -180, 180),
+          clamp(centerLat - latSpan / 2, -90, 90),
+          clamp(centerLat + latSpan / 2, -90, 90)
+        ];
+        return `[${bounds.map(formatViewportNumber).join(',')}]`;
+      }
+
+      function geoFromViewportText(text) {
+        const values = parseMapViewport(text);
+        if (!values) return null;
+        const [lonMin, lonMax, latMin, latMax] = values;
+        const lonSpan = lonMax - lonMin;
+        const latSpan = latMax - latMin;
+        if (lonSpan <= 0 || latSpan <= 0) return null;
+        return {
+          center: {
+            lon: (lonMin + lonMax) / 2,
+            lat: (latMin + latMax) / 2
+          },
+          scale: Math.min(25, Math.max(1, Math.min(360 / lonSpan, 180 / latSpan)))
+        };
+      }
+
+      function parseMapViewport(text) {
+        const matches = String(text || '').match(/-?\d+(?:\.\d+)?/g);
+        if (!matches || matches.length !== 4) return null;
+        const values = matches.map(Number);
+        if (values.some((value) => !Number.isFinite(value))) return null;
+        return values;
+      }
+
+      function clamp(value, minValue, maxValue) {
+        return Math.min(maxValue, Math.max(minValue, value));
+      }
+
+      function formatViewportNumber(value) {
+        return Number(value.toFixed(4)).toString();
+      }
+
       function buildMatrix() {
         const weighted = MONTHS.map(() => HOURS.map(() => 0));
         const counts = MONTHS.map(() => HOURS.map(() => 0));
@@ -504,7 +629,7 @@ def _index_html() -> str:
           y: MONTHS,
           z: matrix,
           colorscale: COLORSCALE,
-          colorbar: { title: { text: metric.unit } },
+          colorbar: { title: { text: colorbarTitle(metric), side: 'right' } },
           ...limits,
           hovertemplate,
           text: state.showValues ? matrix.map((row) => row.map((value) => value == null ? '' : value.toFixed(2))) : undefined,
@@ -596,9 +721,9 @@ def _index_html() -> str:
             linecolor: '#000000',
             zeroline: false
           },
-          margin: { l: 70, r: 55, t: state.showTitle ? 55 : 20, b: 112 },
+          margin: { l: 70, r: 55, t: state.showTitle ? 72 : 20, b: 112 },
           annotations: [{
-            text: `${selectedLocation().name} · ${state.source} · ${metric.label} [${metric.unit}] · ${state.yearStart}-${state.yearEnd}`,
+            text: `Data Source: ${state.source} ${state.yearStart}-${state.yearEnd}`,
             xref: 'paper',
             yref: 'paper',
             x: 0,
@@ -619,14 +744,20 @@ def _index_html() -> str:
       }
 
       function plotTitle() {
-        const locationName = selectedLocation().name ?? '';
+        const location = selectedLocation();
+        const locationLine = [location.name, location.country].filter(Boolean).join(', ');
         const baseTitle = cleanTitle(state.figureTitle || 'Wetbulb Potential');
-        if (!locationName) return baseTitle;
-        if (!baseTitle) return locationName;
-        if (baseTitle.toLocaleLowerCase().includes(locationName.toLocaleLowerCase())) {
+        if (!locationLine) return baseTitle;
+        if (!baseTitle) return locationLine;
+        if (baseTitle.toLocaleLowerCase().includes(locationLine.toLocaleLowerCase())) {
           return baseTitle;
         }
-        return `${locationName} - ${baseTitle}`;
+        return `${locationLine}<br>${baseTitle}`;
+      }
+
+      function colorbarTitle(metric) {
+        if (metric.id === 'delta_t_k') return 'ΔT [K]';
+        return metric.unit ? `${metric.label} [${metric.unit}]` : metric.label;
       }
 
       function cleanTitle(value) {

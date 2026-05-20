@@ -18,9 +18,11 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "showTitle": True,
     "showContourLabels": True,
     "isolineCount": 10,
+    "mapPreset": "world",
+    "mapViewport": "[-180,180,-90,90]",
     "figureTitle": "Wetbulb Potential",
     "cmin": 0,
-    "cmax": 25,
+    "cmax": 16,
     "fontFamily": "Times New Roman",
     "figureWidth": 500,
     "figureHeight": 400,
@@ -63,6 +65,30 @@ CONTROL_PANELS: list[dict[str, Any]] = [
             {"id": "isolineCount", "label": "Isoline count", "type": "number"},
             {"id": "cmin", "label": "cmin", "type": "number"},
             {"id": "cmax", "label": "cmax", "type": "number"},
+        ],
+    },
+    {
+        "id": "map",
+        "title": "Map",
+        "controls": [
+            {
+                "id": "mapPreset",
+                "label": "Map preset",
+                "type": "select",
+                "options": [
+                    {"id": "world", "label": "World"},
+                    {"id": "europe", "label": "Europe"},
+                    {"id": "north_america", "label": "North America"},
+                    {"id": "middle_east", "label": "Middle East"},
+                    {"id": "asia_india_japan", "label": "Asia (India to Japan)"},
+                    {"id": "custom", "label": "Custom"},
+                ],
+            },
+            {
+                "id": "mapViewport",
+                "label": "Map viewport [lon_min,lon_max,lat_min,lat_max]",
+                "type": "text",
+            },
         ],
     },
     {
