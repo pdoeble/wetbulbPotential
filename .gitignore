@@ -5,6 +5,7 @@ web/node_modules/
 web/dist/
 web/.vite/
 web/public/sql-wasm.wasm
+web/public/data/*.tmp
 web/vite-dev.log
 web/preview.log
 .pytest_cache/
