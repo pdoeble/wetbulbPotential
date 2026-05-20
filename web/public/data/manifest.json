@@ -3,7 +3,7 @@
   "generated_from": "wetbulb_pipeline",
   "database": {
     "path": "data/wetbulb_processed.sqlite",
-    "size_bytes": 25432064
+    "size_bytes": 50253824
   },
   "locations": [
     {
@@ -1529,656 +1529,656 @@
       "location_id": "AT_SAALFELDEN_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "AT_ST_NIKOLAI_ROAD",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "BE_SPA_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_AFFALTERBACH_ROAD",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_BILSTER_BERG_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_GROSS_DOELLN_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_HOCKENHEIM_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_IMMENDINGEN_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_LEIPHEIM_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_LUENEBURG_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_NUERBURGRING_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "DE_SACHSENRING_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "HR_SIBENIK_ROAD",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "IT_BARBERINO_ROAD",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "IT_MONZA_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "SE_ARJEPLOG_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "SE_SORSELE_TRACK",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "US_COTA_TRACK",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3462
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "US_NAPA_ROAD",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "US_ROAD_ATLANTA_TRACK",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3461
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "US_SONOMA_TRACK",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "abu-dhabi-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1752
+      "year_max": 2025,
+      "cells": 3504
     },
     {
       "source": "NASA_POWER",
       "location_id": "al-ain",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1752
+      "year_max": 2025,
+      "cells": 3504
     },
     {
       "source": "NASA_POWER",
       "location_id": "alice-springs-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1782
+      "year_max": 2025,
+      "cells": 3564
     },
     {
       "source": "NASA_POWER",
       "location_id": "athens-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1740
+      "year_max": 2025,
+      "cells": 3480
     },
     {
       "source": "NASA_POWER",
       "location_id": "bangkok-don-mueang",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1770
+      "year_max": 2025,
+      "cells": 3540
     },
     {
       "source": "NASA_POWER",
       "location_id": "cairo-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1740
+      "year_max": 2025,
+      "cells": 3480
     },
     {
       "source": "NASA_POWER",
       "location_id": "cape-town-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1740
+      "year_max": 2025,
+      "cells": 3480
     },
     {
       "source": "NASA_POWER",
       "location_id": "chennai-meenambakkam",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1758
+      "year_max": 2025,
+      "cells": 3516
     },
     {
       "source": "NASA_POWER",
       "location_id": "darwin-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1782
+      "year_max": 2025,
+      "cells": 3564
     },
     {
       "source": "NASA_POWER",
       "location_id": "delhi-new-delhi",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1758
+      "year_max": 2025,
+      "cells": 3516
     },
     {
       "source": "NASA_POWER",
       "location_id": "denver-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3463
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "doha-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1746
+      "year_max": 2025,
+      "cells": 3492
     },
     {
       "source": "NASA_POWER",
       "location_id": "dubai-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1752
+      "year_max": 2025,
+      "cells": 3504
     },
     {
       "source": "NASA_POWER",
       "location_id": "el-centro-imperial",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "houston-george-bush",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3462
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "kuwait-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1746
+      "year_max": 2025,
+      "cells": 3492
     },
     {
       "source": "NASA_POWER",
       "location_id": "las-vegas-harry-reid",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "lecce-nardo-proxy",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "madrid-barajas",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "marrakech-menara",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 3456
+      "year_max": 2025,
+      "cells": 5764
     },
     {
       "source": "NASA_POWER",
       "location_id": "mexico-city-airport",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3462
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "miami-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3461
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "muscat-seeb",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1752
+      "year_max": 2025,
+      "cells": 3504
     },
     {
       "source": "NASA_POWER",
       "location_id": "palm-springs-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "phoenix-sky-harbor",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3463
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "riyadh-king-khalid",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2014,
-      "cells": 1890
+      "year_max": 2025,
+      "cells": 3633
     },
     {
       "source": "NASA_POWER",
       "location_id": "salt-lake-city-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3463
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6912
     },
     {
       "source": "NASA_POWER",
       "location_id": "sevilla-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "singapore-changi",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1776
+      "year_max": 2025,
+      "cells": 3552
     },
     {
       "source": "NASA_POWER",
       "location_id": "stuttgart-neckartal",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NASA_POWER",
       "location_id": "tokyo-haneda",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1782
+      "year_max": 2025,
+      "cells": 3564
     },
     {
       "source": "NOAA",
       "location_id": "abu-dhabi-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1751
+      "year_max": 2025,
+      "cells": 3503
     },
     {
       "source": "NOAA",
       "location_id": "al-ain",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1751
+      "year_max": 2025,
+      "cells": 3503
     },
     {
       "source": "NOAA",
       "location_id": "alice-springs-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1749
+      "year_max": 2025,
+      "cells": 3536
     },
     {
       "source": "NOAA",
       "location_id": "athens-airport",
       "metric": "delta_t_k",
       "year_min": 2004,
-      "year_max": 2013,
-      "cells": 1450
+      "year_max": 2025,
+      "cells": 3190
     },
     {
       "source": "NOAA",
       "location_id": "bangkok-don-mueang",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1742
+      "year_max": 2025,
+      "cells": 3512
     },
     {
       "source": "NOAA",
       "location_id": "cairo-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1740
+      "year_max": 2025,
+      "cells": 3480
     },
     {
       "source": "NOAA",
       "location_id": "cape-town-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1737
+      "year_max": 2025,
+      "cells": 3477
     },
     {
       "source": "NOAA",
       "location_id": "chennai-meenambakkam",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1756
+      "year_max": 2025,
+      "cells": 3520
     },
     {
       "source": "NOAA",
       "location_id": "darwin-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1786
+      "year_max": 2025,
+      "cells": 3574
     },
     {
       "source": "NOAA",
       "location_id": "delhi-new-delhi",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1745
+      "year_max": 2025,
+      "cells": 3505
     },
     {
       "source": "NOAA",
       "location_id": "denver-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2012,
-      "cells": 3175
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6535
     },
     {
       "source": "NOAA",
       "location_id": "doha-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1745
+      "year_max": 2025,
+      "cells": 3491
     },
     {
       "source": "NOAA",
       "location_id": "dubai-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1751
+      "year_max": 2025,
+      "cells": 3503
     },
     {
       "source": "NOAA",
       "location_id": "el-centro-imperial",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 3126
+      "year_max": 2025,
+      "cells": 6474
     },
     {
       "source": "NOAA",
       "location_id": "houston-george-bush",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3462
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "kuwait-intl",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1745
+      "year_max": 2025,
+      "cells": 3491
     },
     {
       "source": "NOAA",
       "location_id": "las-vegas-harry-reid",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3464
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "lecce-nardo-proxy",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 2225
+      "year_max": 2025,
+      "cells": 4148
     },
     {
       "source": "NOAA",
       "location_id": "madrid-barajas",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1734
+      "year_max": 2025,
+      "cells": 3468
     },
     {
       "source": "NOAA",
       "location_id": "marrakech-menara",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 3264
+      "year_max": 2025,
+      "cells": 5572
     },
     {
       "source": "NOAA",
       "location_id": "mexico-city-airport",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3462
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "miami-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3461
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "muscat-seeb",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1751
+      "year_max": 2025,
+      "cells": 3503
     },
     {
       "source": "NOAA",
       "location_id": "palm-springs-intl",
       "metric": "delta_t_k",
       "year_min": 2005,
-      "year_max": 2013,
-      "cells": 2312
+      "year_max": 2025,
+      "cells": 5672
     },
     {
       "source": "NOAA",
       "location_id": "phoenix-sky-harbor",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3463
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "riyadh-king-khalid",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1745
+      "year_max": 2025,
+      "cells": 3491
     },
     {
       "source": "NOAA",
       "location_id": "salt-lake-city-intl",
       "metric": "delta_t_k",
-      "year_min": 2001,
-      "year_max": 2013,
-      "cells": 3463
+      "year_min": 2002,
+      "year_max": 2025,
+      "cells": 6816
     },
     {
       "source": "NOAA",
       "location_id": "sevilla-airport",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1881
+      "year_max": 2025,
+      "cells": 3615
     },
     {
       "source": "NOAA",
       "location_id": "singapore-changi",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1775
+      "year_max": 2025,
+      "cells": 3551
     },
     {
       "source": "NOAA",
       "location_id": "tokyo-haneda",
       "metric": "delta_t_k",
       "year_min": 2002,
-      "year_max": 2013,
-      "cells": 1781
+      "year_max": 2025,
+      "cells": 3563
     }
   ],
   "metrics": [
