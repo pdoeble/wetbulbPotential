@@ -149,9 +149,10 @@ def _index_html() -> str:
   <body>
     <template id="required-controls">
       Data Plot Figure & Export Data source Location Metric Year start Year end Display Preset
-      Show cell values Show isoline labels Figure title Font family Figure width [px]
-      Figure height [px] Base font size Title font size Axis title font size Tick font size
-      Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines Locations
+      Show cell values Show isoline labels cmin cmax Figure title Font family
+      Figure width [px] Figure height [px] Base font size Title font size Axis title font size
+      Tick font size Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
+      Locations
     </template>
     <main>
       <section class="source-box" id="sourceBox"></section>
@@ -169,7 +170,9 @@ def _index_html() -> str:
     </main>
     <script>
       const HOURS = Array.from({ length: 24 }, (_, index) => index);
+      const HOUR_TICKS = Array.from({ length: 12 }, (_, index) => index * 2);
       const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+      const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const COLORSCALE = [
         [0, '#2451a6'],
         [0.25, '#2aa7a2'],
@@ -248,7 +251,9 @@ def _index_html() -> str:
         }
         if (control.options) fillOptions(input, control.options);
         input.addEventListener('input', () => {
-          state[control.id] = control.type === 'number' ? Number(input.value) : input.value;
+          state[control.id] = control.type === 'number'
+            ? (input.value === '' ? null : Number(input.value))
+            : input.value;
           refreshDependentOptions();
           updateLocationMap();
           updatePlot();
@@ -453,6 +458,7 @@ def _index_html() -> str:
 
       function plotData(matrix) {
         const metric = selectedMetric();
+        const limits = colorLimits();
         const hovertemplate = `Month %{y}<br>Hour %{x}:00<br>${metric.label} %{z:.2f} ${metric.unit}<extra></extra>`;
         const heatmap = {
           type: 'heatmap',
@@ -461,6 +467,7 @@ def _index_html() -> str:
           z: matrix,
           colorscale: COLORSCALE,
           colorbar: { title: { text: metric.unit } },
+          ...limits,
           hovertemplate,
           text: state.showValues ? matrix.map((row) => row.map((value) => value == null ? '' : value.toFixed(2))) : undefined,
           texttemplate: state.showValues ? '%{text}' : undefined,
@@ -473,6 +480,7 @@ def _index_html() -> str:
           z: matrix,
           colorscale: COLORSCALE,
           colorbar: { title: { text: metric.unit } },
+          ...limits,
           contours: {
             coloring: 'heatmap',
             showlabels: Boolean(state.showContourLabels),
@@ -487,6 +495,7 @@ def _index_html() -> str:
           x: HOURS,
           y: MONTHS,
           z: matrix,
+          ...limits,
           contours: {
             coloring: 'none',
             showlabels: Boolean(state.showContourLabels),
@@ -534,7 +543,7 @@ def _index_html() -> str:
           width: Number(state.figureWidth),
           height: Number(state.figureHeight),
           title: {
-            text: state.showTitle ? `<b>${state.figureTitle}</b>` : '',
+            text: state.showTitle ? `<b>${plotTitle()}</b>` : '',
             x: 0.5,
             xanchor: 'center',
             font: { size: Number(state.titleFontSize), family: state.fontFamily }
@@ -549,7 +558,9 @@ def _index_html() -> str:
           xaxis: {
             title: { text: 'Local hour [h]', font: { size: Number(state.axisTitleFontSize) } },
             tickmode: 'array',
-            tickvals: HOURS,
+            tickvals: HOUR_TICKS,
+            ticktext: HOUR_TICKS.map((hour) => String(hour)),
+            tickangle: 0,
             tickfont: { size: Number(state.tickFontSize) },
             gridcolor: state.preset === 'sae' ? '#d7dce3' : '#edf0f4',
             linecolor: '#000000',
@@ -559,6 +570,7 @@ def _index_html() -> str:
             title: { text: 'Month [-]', font: { size: Number(state.axisTitleFontSize) } },
             tickmode: 'array',
             tickvals: MONTHS,
+            ticktext: MONTH_LABELS,
             autorange: 'reversed',
             tickfont: { size: Number(state.tickFontSize) },
             gridcolor: state.preset === 'sae' ? '#d7dce3' : '#edf0f4',
@@ -585,6 +597,34 @@ def _index_html() -> str:
 
       function selectedLocation() {
         return appData.locations.find((item) => item.id === state.location) ?? { name: '' };
+      }
+
+      function plotTitle() {
+        const locationName = selectedLocation().name ?? '';
+        const baseTitle = cleanTitle(state.figureTitle || 'Wetbulb Potential');
+        if (!locationName) return baseTitle;
+        if (!baseTitle) return locationName;
+        if (baseTitle.toLocaleLowerCase().includes(locationName.toLocaleLowerCase())) {
+          return baseTitle;
+        }
+        return `${locationName} - ${baseTitle}`;
+      }
+
+      function cleanTitle(value) {
+        return String(value).replace('Climatology', '').replace(/\s+/g, ' ').replace(/^[\s-]+|[\s-]+$/g, '');
+      }
+
+      function colorLimits() {
+        const cmin = numberOrNull(state.cmin);
+        const cmax = numberOrNull(state.cmax);
+        if (cmin === null || cmax === null || cmin >= cmax) return {};
+        return { zmin: cmin, zmax: cmax };
+      }
+
+      function numberOrNull(value) {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
       }
     </script>
   </body>

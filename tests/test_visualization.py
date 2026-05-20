@@ -66,6 +66,10 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
 
     assert data["defaults"]["plotType"] == "combined"
     assert data["defaults"]["source"] == "NASA_POWER"
+    assert data["defaults"]["figureTitle"] == "Wetbulb Potential"
+    assert "Climatology" not in data["defaults"]["figureTitle"]
+    assert data["defaults"]["cmin"] == 0
+    assert data["defaults"]["cmax"] == 25
     assert data["defaults"]["fontFamily"] == "Times New Roman"
     assert data["defaults"]["figureWidth"] == 500
     assert data["defaults"]["figureHeight"] == 400
@@ -93,6 +97,10 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert "plotly_click" in index
     assert "scattergeo" in index
     assert "exportPlotSvg" in index
+    assert "MONTH_LABELS" in index
+    assert "HOUR_TICKS" in index
+    assert "plotTitle" in index
+    assert "colorLimits" in index
     assert all("latitude" in location and "longitude" in location for location in data["locations"])
     for control in [
         "Data source",
@@ -104,6 +112,8 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Preset",
         "Show cell values",
         "Show isoline labels",
+        "cmin",
+        "cmax",
         "Figure title",
         "Font family",
         "Figure width [px]",
@@ -127,6 +137,34 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
     assert [trace.type for trace in figure.data] == ["contour"]
     assert figure.data[0].contours.coloring == "heatmap"
     assert figure.data[0].contours.showlines is True
+    assert figure.data[0].zmin == 0
+    assert figure.data[0].zmax == 25
+    assert list(figure.layout.xaxis.tickvals) == list(range(0, 24, 2))
+    assert figure.layout.xaxis.tickangle == 0
+    assert list(figure.layout.yaxis.ticktext) == [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
+    assert "Climatology" not in figure.layout.title.text
+    assert figure.layout.title.text.startswith("<b>")
+    assert "Wetbulb Potential" in figure.layout.title.text
+    selected_location = next(
+        location
+        for location in app_data["locations"]
+        if location["id"] == app_data["defaults"]["location"]
+    )
+    assert selected_location["name"] in figure.layout.title.text
+    assert selected_location["name"] in figure.layout.annotations[0].text
     assert figure.layout.margin.b >= 90
     assert figure.layout.annotations[0].y <= -0.3
 

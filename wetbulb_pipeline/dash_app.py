@@ -5,7 +5,22 @@ from typing import Any
 from .visualization import build_matrix, build_visualization_data
 
 HOURS = list(range(24))
+HOUR_TICKS = list(range(0, 24, 2))
 MONTHS = list(range(1, 13))
+MONTH_LABELS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
 COLORSCALE = [
     [0, "#2451a6"],
     [0.25, "#2aa7a2"],
@@ -188,6 +203,8 @@ def create_dash_app(data_dir: str = "web/public/data"):
             Input("preset", "value"),
             Input("showValues", "value"),
             Input("showContourLabels", "value"),
+            Input("cmin", "value"),
+            Input("cmax", "value"),
             Input("figureTitle", "value"),
             Input("fontFamily", "value"),
             Input("figureWidth", "value"),
@@ -211,6 +228,8 @@ def create_dash_app(data_dir: str = "web/public/data"):
             "preset",
             "showValues",
             "showContourLabels",
+            "cmin",
+            "cmax",
             "figureTitle",
             "fontFamily",
             "figureWidth",
@@ -342,6 +361,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         int(settings["yearEnd"]),
     )
     fig = go.Figure()
+    color_limits = _color_limits(settings)
     if settings["plotType"] == "heatmap":
         fig.add_trace(
             go.Heatmap(
@@ -350,6 +370,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 z=matrix,
                 colorscale=COLORSCALE,
                 colorbar={"title": {"text": metric["unit"]}},
+                **color_limits,
                 hovertemplate=(
                     "Month %{y}<br>Hour %{x}:00<br>"
                     f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
@@ -367,6 +388,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 z=matrix,
                 colorscale=COLORSCALE,
                 colorbar={"title": {"text": metric["unit"]}},
+                **color_limits,
                 contours={
                     "coloring": "heatmap",
                     "showlabels": settings["showContourLabels"],
@@ -391,6 +413,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 x=HOURS,
                 y=MONTHS,
                 z=matrix,
+                **color_limits,
                 contours={
                     "coloring": "none",
                     "showlabels": settings["showContourLabels"],
@@ -411,7 +434,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         width=int(settings["figureWidth"]),
         height=int(settings["figureHeight"]),
         title={
-            "text": f"<b>{settings['figureTitle']}</b>" if settings["showTitle"] else "",
+            "text": f"<b>{_plot_title(app_data, settings)}</b>" if settings["showTitle"] else "",
             "x": 0.5,
             "xanchor": "center",
             "font": {"size": int(settings["titleFontSize"])},
@@ -425,7 +448,9 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 "font": {"size": int(settings["axisTitleFontSize"])},
             },
             "tickmode": "array",
-            "tickvals": HOURS,
+            "tickvals": HOUR_TICKS,
+            "ticktext": [str(hour) for hour in HOUR_TICKS],
+            "tickangle": 0,
             "tickfont": {"size": int(settings["tickFontSize"])},
             "gridcolor": "#d7dce3" if settings["preset"] == "sae" else "#edf0f4",
             "linecolor": "black",
@@ -438,6 +463,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
             },
             "tickmode": "array",
             "tickvals": MONTHS,
+            "ticktext": MONTH_LABELS,
             "autorange": "reversed",
             "tickfont": {"size": int(settings["tickFontSize"])},
             "gridcolor": "#d7dce3" if settings["preset"] == "sae" else "#edf0f4",
@@ -602,6 +628,38 @@ def _cell_value_trace(matrix: list[list[float | None]], settings: dict[str, Any]
         hoverinfo="skip",
         showlegend=False,
     )
+
+
+def _plot_title(app_data: dict[str, Any], settings: dict[str, Any]) -> str:
+    location_name = _location(app_data, settings["location"]).get("name", "")
+    base_title = str(settings.get("figureTitle") or "Wetbulb Potential").replace(
+        "Climatology", ""
+    )
+    base_title = " ".join(base_title.split()).strip(" -")
+    if not location_name:
+        return base_title
+    if not base_title:
+        return location_name
+    if location_name.casefold() in base_title.casefold():
+        return base_title
+    return f"{location_name} - {base_title}"
+
+
+def _color_limits(settings: dict[str, Any]) -> dict[str, float]:
+    cmin = _number_or_none(settings.get("cmin"))
+    cmax = _number_or_none(settings.get("cmax"))
+    if cmin is None or cmax is None or cmin >= cmax:
+        return {}
+    return {"zmin": cmin, "zmax": cmax}
+
+
+def _number_or_none(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _metric(app_data: dict[str, Any], metric_id: str) -> dict[str, Any]:
