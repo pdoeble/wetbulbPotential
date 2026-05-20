@@ -8,7 +8,6 @@ dependencies:
   - requests
   - pyyaml
   - pydantic
-  - psychrolib
   - timezonefinder
   - tzdata
   - pytest
@@ -17,3 +16,4 @@ dependencies:
   - pip:
       - dash
       - plotly
+      - psychrolib
