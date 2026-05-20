@@ -60,6 +60,14 @@ def main(argv: list[str] | None = None) -> None:
     export_parser.add_argument("--manifest", default="web/public/data/manifest.json")
     export_parser.add_argument("--max-mb", type=float, default=100)
     export_parser.add_argument(
+        "--years",
+        nargs=2,
+        type=int,
+        metavar=("START", "END"),
+        default=None,
+        help="Optional inclusive local-year range to export.",
+    )
+    export_parser.add_argument(
         "--metrics",
         nargs="+",
         choices=[*METRICS.keys(), "all"],
@@ -119,6 +127,7 @@ def main(argv: list[str] | None = None) -> None:
             args.manifest,
             max_bytes=int(args.max_mb * 1024 * 1024),
             metrics=_normalize_metrics(args.metrics),
+            years=tuple(args.years) if args.years else None,
         )
     elif args.command == "build-demo":
         _init_db(args.db, args.config)

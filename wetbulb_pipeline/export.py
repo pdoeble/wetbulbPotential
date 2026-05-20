@@ -79,8 +79,17 @@ def export_processed(
     manifest_path: str | Path = "web/public/data/manifest.json",
     max_bytes: int = 100 * 1024 * 1024,
     metrics: list[str] | tuple[str, ...] | None = DEFAULT_EXPORT_METRICS,
+    years: tuple[int, int] | None = None,
 ) -> None:
     selected_metrics = _selected_metrics(metrics)
+    year_filter_sql = ""
+    year_filter_params: tuple[int, int] = ()
+    if years is not None:
+        year_start, year_end = years
+        if year_start > year_end:
+            raise ValueError(f"Invalid export year range: {year_start}-{year_end}")
+        year_filter_sql = "AND year BETWEEN ? AND ?"
+        year_filter_params = (int(year_start), int(year_end))
     processed_path = Path(processed_db)
     processed_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = processed_path.with_name(f"{processed_path.name}.tmp")
@@ -101,8 +110,14 @@ def export_processed(
                 f"""
                 SELECT {location_columns}
                 FROM locations
-                WHERE id IN (SELECT DISTINCT location_id FROM observations WHERE valid = 1)
-                """
+                WHERE id IN (
+                  SELECT DISTINCT location_id
+                  FROM observations
+                  WHERE valid = 1
+                    {year_filter_sql}
+                )
+                """,
+                year_filter_params,
             ).fetchall(),
         )
         for metric in selected_metrics:
@@ -131,9 +146,10 @@ def export_processed(
                     FROM observations
                     WHERE valid = 1
                       AND {info["expression"]} IS NOT NULL
+                      {year_filter_sql}
                     GROUP BY source, location_id, year, month, hour_local
                     """,
-                    (metric,),
+                    (metric, *year_filter_params),
                 ).fetchall(),
             )
         processed.commit()

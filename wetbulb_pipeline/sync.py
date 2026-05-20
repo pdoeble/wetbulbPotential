@@ -130,7 +130,14 @@ def update_all(
 
     if export_after and not dry_run:
         progress_state.emit(f"Exporting processed data: {processed_db}")
-        export_processed(raw_db, processed_db, manifest_path, metrics=export_metrics)
+        export_years = _export_years(config, years)
+        export_processed(
+            raw_db,
+            processed_db,
+            manifest_path,
+            metrics=export_metrics,
+            years=export_years,
+        )
         progress_state.emit(f"Export complete: {processed_db}; manifest {manifest_path}")
     progress_state.emit(f"Finished update: {len(results)} result rows")
     return results
@@ -141,6 +148,11 @@ def _location_config(config: dict, location_id: str) -> dict:
         if item["id"] == location_id:
             return item
     raise KeyError(location_id)
+
+
+def _export_years(config: dict, update_years: tuple[int, int]) -> tuple[int, int]:
+    default_start = int(config.get("defaults", {}).get("year_start", update_years[0]))
+    return default_start, int(update_years[1])
 
 
 def _sync_dwd(
