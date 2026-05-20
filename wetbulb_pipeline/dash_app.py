@@ -203,6 +203,7 @@ def create_dash_app(data_dir: str = "web/public/data"):
             Input("preset", "value"),
             Input("showValues", "value"),
             Input("showContourLabels", "value"),
+            Input("isolineCount", "value"),
             Input("cmin", "value"),
             Input("cmax", "value"),
             Input("figureTitle", "value"),
@@ -228,6 +229,7 @@ def create_dash_app(data_dir: str = "web/public/data"):
             "preset",
             "showValues",
             "showContourLabels",
+            "isolineCount",
             "cmin",
             "cmax",
             "figureTitle",
@@ -362,6 +364,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
     )
     fig = go.Figure()
     color_limits = _color_limits(settings)
+    contour_kwargs = _contour_kwargs(matrix, settings)
     if settings["plotType"] == "heatmap":
         fig.add_trace(
             go.Heatmap(
@@ -382,27 +385,31 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
         )
     elif settings["plotType"] == "combined":
         fig.add_trace(
-            go.Contour(
+            go.Heatmap(
                 x=HOURS,
                 y=MONTHS,
                 z=matrix,
                 colorscale=COLORSCALE,
                 colorbar={"title": {"text": metric["unit"]}},
                 **color_limits,
-                contours={
-                    "coloring": "heatmap",
-                    "showlabels": settings["showContourLabels"],
-                    "showlines": True,
-                },
-                line={
-                    "color": "#111827",
-                    "width": 1.1 if settings["preset"] == "sae" else 0.9,
-                },
-                showscale=True,
                 hovertemplate=(
                     "Month %{y}<br>Hour %{x}:00<br>"
                     f"{metric['label']} %{{z:.2f}} {metric['unit']}<extra></extra>"
                 ),
+            )
+        )
+        fig.add_trace(
+            go.Contour(
+                x=HOURS,
+                y=MONTHS,
+                z=matrix,
+                **contour_kwargs,
+                line={
+                    "color": "#111827",
+                    "width": 1.1 if settings["preset"] == "sae" else 0.9,
+                },
+                showscale=False,
+                hoverinfo="skip",
             )
         )
         if settings["showValues"]:
@@ -413,12 +420,7 @@ def build_dash_figure(app_data: dict[str, Any], settings: dict[str, Any]):
                 x=HOURS,
                 y=MONTHS,
                 z=matrix,
-                **color_limits,
-                contours={
-                    "coloring": "none",
-                    "showlabels": settings["showContourLabels"],
-                    "showlines": True,
-                },
+                **contour_kwargs,
                 line={"color": "#111827", "width": 1.1 if settings["preset"] == "sae" else 0.9},
                 showscale=False,
                 hovertemplate=(
@@ -651,6 +653,39 @@ def _color_limits(settings: dict[str, Any]) -> dict[str, float]:
     if cmin is None or cmax is None or cmin >= cmax:
         return {}
     return {"zmin": cmin, "zmax": cmax}
+
+
+def _contour_kwargs(
+    matrix: list[list[float | None]], settings: dict[str, Any]
+) -> dict[str, Any]:
+    contours: dict[str, Any] = {
+        "coloring": "none",
+        "showlabels": settings["showContourLabels"],
+        "showlines": True,
+    }
+    values = [value for row in matrix for value in row if value is not None]
+    if not values:
+        return {"ncontours": _isoline_count(settings), "contours": contours}
+    value_min = min(values)
+    value_max = max(values)
+    isoline_count = _isoline_count(settings)
+    if value_max <= value_min:
+        return {"ncontours": isoline_count, "contours": contours}
+    contours.update(
+        {
+            "start": value_min,
+            "end": value_max,
+            "size": (value_max - value_min) / max(1, isoline_count - 1),
+        }
+    )
+    return {"autocontour": False, "contours": contours}
+
+
+def _isoline_count(settings: dict[str, Any]) -> int:
+    value = _number_or_none(settings.get("isolineCount"))
+    if value is None:
+        return 10
+    return min(50, max(2, int(round(value))))
 
 
 def _number_or_none(value: Any) -> float | None:

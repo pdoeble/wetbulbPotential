@@ -80,13 +80,15 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
     assert data["defaults"]["legendFontSize"] == 16
     assert data["defaults"]["showTitle"] is True
     assert data["defaults"]["showContourLabels"] is True
+    assert data["defaults"]["isolineCount"] == 10
     assert data["plotTypes"] == [
         {"id": "heatmap", "label": "Heatmap"},
         {"id": "contour", "label": "Isolines"},
         {"id": "combined", "label": "Heatmap + isolines"},
     ]
-    assert "filledContour" in index
-    assert "coloring: 'heatmap'" in index
+    assert "combinedContour" in index
+    assert "contourSettings" in index
+    assert "coloring: 'none'" in index
 
     for panel in ["Data", "Plot", "Figure & Export"]:
         assert panel in index
@@ -112,6 +114,7 @@ def test_static_site_schema_controls_and_defaults(tmp_path: Path) -> None:
         "Preset",
         "Show cell values",
         "Show isoline labels",
+        "Isoline count",
         "cmin",
         "cmax",
         "Figure title",
@@ -134,11 +137,15 @@ def test_default_combined_plot_uses_filled_contour_layer() -> None:
 
     figure = build_dash_figure(app_data, app_data["defaults"])
 
-    assert [trace.type for trace in figure.data] == ["contour"]
-    assert figure.data[0].contours.coloring == "heatmap"
-    assert figure.data[0].contours.showlines is True
+    assert [trace.type for trace in figure.data] == ["heatmap", "contour"]
     assert figure.data[0].zmin == 0
     assert figure.data[0].zmax == 25
+    assert figure.data[1].zmin is None
+    assert figure.data[1].zmax is None
+    assert figure.data[1].autocontour is False
+    assert figure.data[1].contours.coloring == "none"
+    assert figure.data[1].contours.showlines is True
+    assert figure.data[1].contours.size > 0
     assert list(figure.layout.xaxis.tickvals) == list(range(0, 24, 2))
     assert figure.layout.xaxis.tickangle == 0
     assert list(figure.layout.yaxis.ticktext) == [

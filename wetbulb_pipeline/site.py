@@ -149,7 +149,7 @@ def _index_html() -> str:
   <body>
     <template id="required-controls">
       Data Plot Figure & Export Data source Location Metric Year start Year end Display Preset
-      Show cell values Show isoline labels cmin cmax Figure title Font family
+      Show cell values Show isoline labels Isoline count cmin cmax Figure title Font family
       Figure width [px] Figure height [px] Base font size Title font size Axis title font size
       Tick font size Legend font size Show title Export SVG Heatmap Isolines Heatmap + isolines
       Locations
@@ -459,6 +459,7 @@ def _index_html() -> str:
       function plotData(matrix) {
         const metric = selectedMetric();
         const limits = colorLimits();
+        const contours = contourSettings(matrix);
         const hovertemplate = `Month %{y}<br>Hour %{x}:00<br>${metric.label} %{z:.2f} ${metric.unit}<extra></extra>`;
         const heatmap = {
           type: 'heatmap',
@@ -473,34 +474,12 @@ def _index_html() -> str:
           texttemplate: state.showValues ? '%{text}' : undefined,
           textfont: { size: Math.max(8, Number(state.tickFontSize) - 4), color: '#152033' }
         };
-        const filledContour = {
-          type: 'contour',
-          x: HOURS,
-          y: MONTHS,
-          z: matrix,
-          colorscale: COLORSCALE,
-          colorbar: { title: { text: metric.unit } },
-          ...limits,
-          contours: {
-            coloring: 'heatmap',
-            showlabels: Boolean(state.showContourLabels),
-            showlines: true
-          },
-          line: { color: '#111827', width: state.preset === 'sae' ? 1.1 : 0.9 },
-          showscale: true,
-          hovertemplate
-        };
         const lineContour = {
           type: 'contour',
           x: HOURS,
           y: MONTHS,
           z: matrix,
-          ...limits,
-          contours: {
-            coloring: 'none',
-            showlabels: Boolean(state.showContourLabels),
-            showlines: true
-          },
+          ...contours,
           line: { color: '#111827', width: state.preset === 'sae' ? 1.1 : 0.9 },
           showscale: false,
           hovertemplate
@@ -509,7 +488,10 @@ def _index_html() -> str:
         if (state.plotType === 'contour') {
           return state.showValues ? [lineContour, valueTextTrace(matrix)] : [lineContour];
         }
-        return state.showValues ? [filledContour, valueTextTrace(matrix)] : [filledContour];
+        const combinedContour = { ...lineContour, hoverinfo: 'skip', hovertemplate: undefined };
+        return state.showValues
+          ? [heatmap, combinedContour, valueTextTrace(matrix)]
+          : [heatmap, combinedContour];
       }
 
       function valueTextTrace(matrix) {
@@ -619,6 +601,35 @@ def _index_html() -> str:
         const cmax = numberOrNull(state.cmax);
         if (cmin === null || cmax === null || cmin >= cmax) return {};
         return { zmin: cmin, zmax: cmax };
+      }
+
+      function contourSettings(matrix) {
+        const values = matrix.flat().filter((value) => value !== null && value !== undefined && Number.isFinite(value));
+        const contours = {
+          coloring: 'none',
+          showlabels: Boolean(state.showContourLabels),
+          showlines: true
+        };
+        const count = isolineCount();
+        if (!values.length) return { ncontours: count, contours };
+        const minValue = Math.min(...values);
+        const maxValue = Math.max(...values);
+        if (maxValue <= minValue) return { ncontours: count, contours };
+        return {
+          autocontour: false,
+          contours: {
+            ...contours,
+            start: minValue,
+            end: maxValue,
+            size: (maxValue - minValue) / Math.max(1, count - 1)
+          }
+        };
+      }
+
+      function isolineCount() {
+        const value = numberOrNull(state.isolineCount);
+        if (value === null) return 10;
+        return Math.min(50, Math.max(2, Math.round(value)));
       }
 
       function numberOrNull(value) {
